@@ -1,18 +1,10 @@
-import mysql from "mysql2";
+import mysql from "mysql2/promise";
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: "localhost",
   user: "root",
   password: "",
   database: "ukk_pengaduan",
-});
-
-db.connect((err) => {
-  if (err) {
-    console.log("Database gagal connect");
-  } else {
-    console.log("Database berhasil connect");
-  }
 });
 
 export default db;

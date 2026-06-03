@@ -1,170 +1,205 @@
-import db from "../config/database.js"
-import bcrypt from "bcryptjs"
-import jwt from "jsonwebtoken"
+import db from "../config/database.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 // ======================================
 // REGISTER
 // ======================================
 
 export const register = async (req, res) => {
-  try {
-    const { nama, email, password, role } = req.body
 
-    // validasi input
+  try {
+
+    const { nama, email, password, role } = req.body;
+
+    // VALIDASI
     if (!nama || !email || !password) {
+
       return res.status(400).json({
         success: false,
-        message: "Nama, email, dan password wajib diisi"
-      })
+        message: "Nama, email, dan password wajib diisi",
+      });
+
     }
 
-    // cek email sudah ada atau belum
-    const checkSql = "SELECT * FROM users WHERE email = ?"
+    // CEK EMAIL
+    const [checkUser] = await db.query(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
 
-    db.query(checkSql, [email], async (err, result) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: err.message
-        })
-      }
+    if (checkUser.length > 0) {
 
-      if (result.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Email sudah digunakan"
-        })
-      }
+      return res.status(400).json({
+        success: false,
+        message: "Email sudah digunakan",
+      });
 
-      // hash password
-      const hashPassword = await bcrypt.hash(password, 10)
+    }
 
-      // insert user
-      const insertSql = `
-        INSERT INTO users (nama, email, password, role)
-        VALUES (?, ?, ?, ?)
+    // HASH PASSWORD
+    const hashPassword = await bcrypt.hash(
+      password,
+      10
+    );
+
+    // INSERT USER
+    await db.query(
       `
+      INSERT INTO users
+      (nama, email, password, role)
+      VALUES (?, ?, ?, ?)
+      `,
+      [
+        nama,
+        email,
+        hashPassword,
+        role || "user",
+      ]
+    );
 
-      db.query(
-        insertSql,
-        [nama, email, hashPassword, role || "user"],
-        (err, result) => {
-          if (err) {
-            return res.status(500).json({
-              success: false,
-              message: err.message
-            })
-          }
+    return res.status(201).json({
+      success: true,
+      message: "Register berhasil",
+    });
 
-          res.status(201).json({
-            success: true,
-            message: "Register berhasil"
-          })
-        }
-      )
-    })
   } catch (error) {
-    res.status(500).json({
+
+    console.log(error);
+
+    return res.status(500).json({
       success: false,
-      message: error.message
-    })
+      message: error.message,
+    });
+
   }
-}
+};
 
 // ======================================
 // LOGIN
 // ======================================
 
-export const login = (req, res) => {
-  try {
-    const { email, password } = req.body
+export const login = async (req, res) => {
 
+  try {
+
+    const { email, password } = req.body;
+
+    // VALIDASI
     if (!email || !password) {
+
       return res.status(400).json({
         success: false,
-        message: "Email dan password wajib diisi"
-      })
+        message: "Email dan password wajib diisi",
+      });
+
     }
 
-    const sql = "SELECT * FROM users WHERE email = ?"
+    // CARI USER
+    const [rows] = await db.query(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
 
-    db.query(sql, [email], async (err, result) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          message: err.message
-        })
+    // USER TIDAK DITEMUKAN
+    if (rows.length === 0) {
+
+      return res.status(404).json({
+        success: false,
+        message: "User tidak ditemukan",
+      });
+
+    }
+
+    const user = rows[0];
+
+    // CEK PASSWORD
+    const isMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!isMatch) {
+
+      return res.status(401).json({
+        success: false,
+        message: "Password salah",
+      });
+
+    }
+
+    // GENERATE TOKEN
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role: user.role,
+      },
+
+      process.env.JWT_SECRET,
+
+      {
+        expiresIn: "1d",
       }
+    );
 
-      if (result.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "User tidak ditemukan"
-        })
-      }
+    // RESPONSE
+    return res.status(200).json({
+      success: true,
+      message: "Login berhasil",
+      token,
 
-      const user = result[0]
+      user: {
+        id: user.id,
+        nama: user.nama,
+        email: user.email,
+        role: user.role,
+        foto_profil: user.foto_profil,
+      },
+    });
 
-      // cek password
-      const comparePassword = await bcrypt.compare(
-        password,
-        user.password
-      )
-
-      if (!comparePassword) {
-        return res.status(401).json({
-          success: false,
-          message: "Password salah"
-        })
-      }
-
-      // generate token
-      const token = jwt.sign(
-        {
-          id: user.id,
-          role: user.role
-        },
-        "SECRETKEY",
-        {
-          expiresIn: "1d"
-        }
-      )
-
-      res.status(200).json({
-        success: true,
-        message: "Login berhasil",
-        token,
-        user: {
-          id: user.id,
-          nama: user.nama,
-          email: user.email,
-          role: user.role,
-          foto_profil: user.foto_profil
-        }
-      })
-    })
   } catch (error) {
-    res.status(500).json({
+
+    console.log(error);
+
+    return res.status(500).json({
       success: false,
-      message: error.message
-    })
+      message: error.message,
+    });
+
   }
-}
+};
 
 // ======================================
 // GET PROFILE LOGIN
 // ======================================
 
 export const getMe = async (req, res) => {
+
   try {
-    res.status(200).json({
+
+    return res.status(200).json({
       success: true,
-      user: req.user
-    })
+      user: req.user,
+    });
+
   } catch (error) {
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
-      message: error.message
-    })
+      message: error.message,
+    });
+
   }
-}
+};
+
+// ======================================
+// EXPORT DEFAULT
+// ======================================
+
+const AuthController = {
+  register,
+  login,
+  getMe,
+};
+
+export default AuthController;

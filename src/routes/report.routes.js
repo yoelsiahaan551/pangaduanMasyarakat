@@ -1,16 +1,74 @@
-import { Router } from "express";
-import { getAll, getOne, create, update, remove, updateStatus } from "../controllers/report.controller.js";
+import express from "express";
+import multer from "multer";
+import path from "path";
+
+import ReportController from "../controllers/report.controller.js";
 import verifyToken from "../middleware/auth.middleware.js";
-import authorizeRoles from "../middleware/role.middleware.js";
-import upload from "../middleware/upload.middleware.js";
 
-const router = Router();
+const router = express.Router();
 
-router.get("/", verifyToken, getAll);
-router.get("/:id", verifyToken, getOne);
-router.post("/", verifyToken, upload.single("gambar"), create);
-router.put("/:id", verifyToken, upload.single("gambar"), update);
-router.delete("/:id", verifyToken, remove);
-router.patch("/:id/status", verifyToken, authorizeRoles("admin", "super_admin"), updateStatus);
+// ======================================
+// MULTER SETUP
+// ======================================
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "src/uploads");
+  },
+
+  filename: (req, file, cb) => {
+    const uniqueName =
+      Date.now() +
+      path.extname(file.originalname);
+
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
+
+// ======================================
+// USER ROUTES
+// ======================================
+
+// GET MY REPORTS
+router.get(
+  "/my",
+  verifyToken,
+  ReportController.getMyReports
+);
+
+// GET DETAIL REPORT
+router.get(
+  "/:id",
+  verifyToken,
+  ReportController.getById
+);
+
+// CREATE REPORT
+router.post(
+  "/",
+  verifyToken,
+  upload.array("photos", 5),
+  ReportController.create
+);
+
+// ======================================
+// ADMIN ROUTES
+// ======================================
+
+// GET ALL REPORTS
+router.get(
+  "/admin/all",
+  verifyToken,
+  ReportController.getAllReports
+);
+
+// UPDATE STATUS
+router.patch(
+  "/admin/:id/status",
+  verifyToken,
+  ReportController.updateStatus
+);
 
 export default router;

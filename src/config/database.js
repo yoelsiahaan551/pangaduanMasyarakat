@@ -1,18 +1,15 @@
-import mysql from "mysql2";
+import dotenv from "dotenv";
+dotenv.config();
 
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "ukk_pengaduan"
+import mysql from "mysql2/promise";
+
+const db = await mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
 });
 
-db.connect((err) => {
-  if (err) {
-    console.log("Database gagal connect");
-  } else {
-    console.log("Database berhasil connect");
-  }
-});
+console.log("Database berhasil connect");
 
 export default db;

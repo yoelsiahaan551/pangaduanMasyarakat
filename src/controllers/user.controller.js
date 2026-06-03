@@ -52,4 +52,4 @@ export const remove = (req, res) => {
       res.json({ message: "User berhasil dihapus" });
     });
   });
-};
+};  

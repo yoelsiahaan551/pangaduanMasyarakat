@@ -1,12 +1,20 @@
-const authorizeRoles = (...roles) => {
+const roleMiddleware = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        message: `Akses ditolak. Role '${req.user.role}' tidak diizinkan.`,
+
+    if (!req.user) {
+      return res.status(401).json({
+        message: "Unauthorized"
       });
     }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        message: "Akses ditolak"
+      });
+    }
+
     next();
   };
 };
 
-export default authorizeRoles;
+export default roleMiddleware;
