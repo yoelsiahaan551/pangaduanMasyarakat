@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
   FaPlus,
@@ -119,18 +120,72 @@ const STATUS_MAP = {
 }
 
 export default function UserBerandaPage() {
+
+  const router = useRouter()
+
   const [mounted, setMounted] = useState(false)
   const [user, setUser] = useState(null)
 
   useEffect(() => {
-    setMounted(true)
 
-    const storedUser = localStorage.getItem("user")
+  setMounted(true)
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+  const token = localStorage.getItem("token")
+
+  if (!token) {
+    router.push("/login")
+    return
+  }
+
+  const getProfile = async () => {
+
+    try {
+
+      const response = await fetch(
+        "http://localhost:5000/api/auth/me",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      )
+
+      const data = await response.json()
+
+      if (response.ok) {
+
+        setUser(data.user)
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        )
+
+      } else {
+
+        localStorage.removeItem("token")
+        localStorage.removeItem("user")
+
+        router.push("/login")
+
+      }
+
+    } catch (error) {
+
+      console.log(error)
+
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+
+      router.push("/login")
+
     }
-  }, [])
+
+  }
+
+  getProfile()
+
+}, [router])
 
   if (!mounted) {
     return null
@@ -176,20 +231,43 @@ export default function UserBerandaPage() {
             <div className="flex items-center gap-3 bg-slate-100 px-3 py-2 rounded-2xl">
 
               <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-semibold">
-                {user?.username
-                  ? user.username.charAt(0).toUpperCase()
+               {user?.nama
+                ? user.nama.charAt(0).toUpperCase()
                   : "U"}
               </div>
 
               <div className="leading-tight">
                 <p className="text-sm font-semibold text-slate-800">
-                  {user?.username || "User"}
+                  {user?.nama || "User"}
                 </p>
 
                 <p className="text-xs text-slate-400">
                   Masyarakat
                 </p>
               </div>
+
+              <button
+  onClick={() => {
+
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
+
+    router.push("/login")
+
+  }}
+  className="
+    ml-3
+    px-4
+    py-2
+    rounded-xl
+    bg-black
+    text-white
+    text-xs
+    font-medium
+  "
+>
+  Logout
+</button>
 
             </div>
 

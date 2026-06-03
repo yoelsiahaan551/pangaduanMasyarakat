@@ -46,18 +46,21 @@ export default function LoginPage() {
 
       if (response.ok) {
 
-        localStorage.setItem("token", data.token)
+  localStorage.setItem(
+    "token",
+    data.token
+  )
 
-        localStorage.setItem(
-          "user",
-          JSON.stringify(data.user)
-        )
+  localStorage.setItem(
+    "user",
+    JSON.stringify(data.user)
+  )
 
-        alert("Login berhasil")
+  alert("Login berhasil")
 
-        router.push("/dashboard")
+  router.push("/user/beranda")
 
-      } else {
+} else {
 
         alert(data.message)
 

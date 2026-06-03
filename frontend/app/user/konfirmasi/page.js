@@ -1,225 +1,407 @@
 // ===============================================
-// FILE: app/user/konfirmasi/page.js
+// FILE: app/admin/pengaduan/page.js
 // ===============================================
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import {
-  FaFileAlt, FaCheckCircle, FaExclamationTriangle,
-  FaRoad, FaLightbulb, FaLeaf, FaWater, FaTrash, FaBuilding,
+  FaBell, FaShieldAlt, FaSignOutAlt, FaSearch, FaFilter,
+  FaChevronRight, FaRoad, FaLightbulb, FaLeaf, FaWater,
+  FaTrash, FaBuilding, FaSort, FaSortUp, FaSortDown,
+  FaDownload, FaTimes,
 } from "react-icons/fa"
-import { Navbar, StepBar, NavButtons } from "../buatPengaduan/page"
 
-const CATEGORY_MAP = {
-  jalan:      { label: "Jalan & Infrastruktur",  icon: <FaRoad />,      color: "#f59e0b" },
-  lampu:      { label: "Penerangan Jalan",        icon: <FaLightbulb />, color: "#3b82f6" },
-  lingkungan: { label: "Lingkungan & Taman",      icon: <FaLeaf />,      color: "#10b981" },
+// ── Shared data maps ──────────────────────────────────────────────────────
+
+export const CATEGORY_MAP = {
+  jalan:      { label: "Jalan & Infrastruktur", icon: <FaRoad />,      color: "#f59e0b" },
+  lampu:      { label: "Penerangan Jalan",       icon: <FaLightbulb />, color: "#3b82f6" },
+  lingkungan: { label: "Lingkungan & Taman",     icon: <FaLeaf />,      color: "#10b981" },
   air:        { label: "Drainase & Air",          icon: <FaWater />,     color: "#06b6d4" },
-  sampah:     { label: "Kebersihan & Sampah",     icon: <FaTrash />,     color: "#8b5cf6" },
-  fasilitas:  { label: "Fasilitas Umum",          icon: <FaBuilding />,  color: "#ef4444" },
+  sampah:     { label: "Kebersihan & Sampah",    icon: <FaTrash />,     color: "#8b5cf6" },
+  fasilitas:  { label: "Fasilitas Umum",         icon: <FaBuilding />,  color: "#ef4444" },
 }
 
-const PRIORITY_LABEL = { rendah: "Rendah", sedang: "Sedang", tinggi: "Tinggi" }
-const PRIORITY_STYLE = {
-  rendah: "bg-green-100 text-green-700",
-  sedang: "bg-yellow-100 text-yellow-700",
-  tinggi: "bg-red-100 text-red-700",
+export const STATUS_MAP = {
+  pending:  { label: "Pending",  pill: "bg-slate-100 text-slate-600",   dot: "bg-slate-400" },
+  diproses: { label: "Diproses", pill: "bg-yellow-100 text-yellow-700", dot: "bg-yellow-500" },
+  selesai:  { label: "Selesai",  pill: "bg-green-100 text-green-700",   dot: "bg-green-500" },
+  ditolak:  { label: "Ditolak",  pill: "bg-red-100 text-red-600",       dot: "bg-red-400" },
 }
 
-const STEPS = [
-  { id: 1, label: "Kategori",      href: "/user/buatPengaduan" },
-  { id: 2, label: "Detail",        href: "/user/detail" },
-  { id: 3, label: "Lokasi & Foto", href: "/user/lokasiFoto" },
-  { id: 4, label: "Konfirmasi",    href: "/user/konfirmasi" },
+export const PRIORITY_MAP = {
+  rendah: { label: "Rendah", color: "bg-green-100 text-green-700" },
+  sedang: { label: "Sedang", color: "bg-yellow-100 text-yellow-700" },
+  tinggi: { label: "Tinggi", color: "bg-red-100 text-red-700" },
+}
+
+// ── Mock data (replace with API) ─────────────────────────────────────────
+
+const ALL_REPORTS = [
+  { id: "ADU-7F2K1A", title: "Jalan berlubang di depan SDN 01 Cipete",         category: "jalan",      status: "diproses", priority: "tinggi", date: "20 Mei 2026", pelapor: "Budi Santoso",  lokasi: "Jl. Cipete Raya No.12, RT 03/05" },
+  { id: "ADU-3B9M2C", title: "Lampu jalan mati di Jl. Sudirman blok C",        category: "lampu",      status: "selesai",  priority: "sedang", date: "17 Mei 2026", pelapor: "Sari Dewi",     lokasi: "Jl. Sudirman Blok C" },
+  { id: "ADU-1X4P8D", title: "Tumpukan sampah tidak diangkut selama 3 hari",   category: "sampah",     status: "pending",  priority: "tinggi", date: "12 Mei 2026", pelapor: "Ahmad Fauzi",   lokasi: "Gang Mawar RT 04/07" },
+  { id: "ADU-9C3L5E", title: "Saluran air tersumbat menyebabkan banjir RT 04", category: "air",        status: "diproses", priority: "sedang", date: "11 Mei 2026", pelapor: "Rina Wati",     lokasi: "RT 04/03 Kelurahan Kebayoran" },
+  { id: "ADU-2M7N6F", title: "Taman RW 07 tidak terawat dan penuh rumput",     category: "lingkungan", status: "pending",  priority: "rendah", date: "10 Mei 2026", pelapor: "Hendra Kurnia", lokasi: "Taman RW 07 Cipete Selatan" },
+  { id: "ADU-5P1Q9G", title: "Fasilitas lapangan olahraga rusak parah",        category: "fasilitas",  status: "ditolak",  priority: "sedang", date: "8 Mei 2026",  pelapor: "Dewi Rahayu",   lokasi: "Lapangan RT 02/04" },
+  { id: "ADU-8R4S3H", title: "Jalan retak sepanjang 50 meter Jl. Melati",      category: "jalan",      status: "pending",  priority: "tinggi", date: "7 Mei 2026",  pelapor: "Joko Susilo",   lokasi: "Jl. Melati Raya No. 45" },
+  { id: "ADU-4T2U7I", title: "Lampu taman padam total sejak seminggu lalu",    category: "lampu",      status: "selesai",  priority: "rendah", date: "5 Mei 2026",  pelapor: "Maya Sari",     lokasi: "Taman Kota Blok B" },
+  { id: "ADU-6V0W1J", title: "Drainase meluap saat hujan deras",               category: "air",        status: "diproses", priority: "tinggi", date: "4 Mei 2026",  pelapor: "Rudi Hartono",  lokasi: "Jl. Raya Antam RT 06" },
+  { id: "ADU-3K8X5L", title: "Tempat sampah rusak dan tidak diganti",          category: "sampah",     status: "selesai",  priority: "rendah", date: "2 Mei 2026",  pelapor: "Lilis Suryani", lokasi: "Pasar Cipete Blok D" },
 ]
 
-export default function KonfirmasiPage() {
-  const router    = useRouter()
-  const user      = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user")) : null
-  const form      = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("pengaduan") || "{}") : {}
+// ── Admin Navbar ──────────────────────────────────────────────────────────
 
-  const [agreement,  setAgreement]  = useState(false)
-  const [submitted,  setSubmitted]  = useState(false)
+export function AdminNavbar({ admin, onLogout, activeLink }) {
+  return (
+    <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-200">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-black flex items-center justify-center">
+            <FaShieldAlt className="text-white text-base" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">Admin Panel</h1>
+            <p className="text-xs text-slate-400">PengaduanKu — Manajemen Pengaduan</p>
+          </div>
+        </div>
 
-  const selectedCategory = CATEGORY_MAP[form.category]
+        <div className="hidden md:flex items-center gap-1">
+          {[
+            { label: "Dashboard",  href: "/admin/beranda" },
+            { label: "Pengaduan",  href: "/admin/pengaduan" },
+            { label: "Pengguna",   href: "/admin/pengguna" },
+            { label: "Laporan",    href: "/admin/laporan" },
+          ].map(link => (
+            <Link key={link.href} href={link.href}>
+              <span className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                activeLink === link.href
+                  ? "bg-black text-white"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}>
+                {link.label}
+              </span>
+            </Link>
+          ))}
+        </div>
 
-  const handleKirim = () => {
-    localStorage.removeItem("pengaduan")
-    setSubmitted(true)
+        <div className="flex items-center gap-3">
+          <button className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition">
+            <FaBell className="text-sm" />
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500" />
+          </button>
+          <div className="flex items-center gap-2 bg-slate-100 px-3 py-2 rounded-2xl">
+            <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-semibold text-sm">
+              {admin?.nama ? admin.nama.charAt(0).toUpperCase() : "A"}
+            </div>
+            <div className="leading-tight hidden sm:block">
+              <p className="text-sm font-semibold text-slate-800">{admin?.nama || "Admin"}</p>
+              <p className="text-xs text-slate-400">Administrator</p>
+            </div>
+            <button
+              onClick={onLogout}
+              className="ml-2 w-8 h-8 rounded-lg bg-slate-200 hover:bg-red-100 hover:text-red-600 flex items-center justify-center text-slate-500 transition"
+            >
+              <FaSignOutAlt className="text-xs" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  )
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────
+
+export default function AdminPengaduanPage() {
+  const router  = useRouter()
+  const [admin,         setAdmin]         = useState(null)
+  const [mounted,       setMounted]       = useState(false)
+  const [search,        setSearch]        = useState("")
+  const [filterStatus,  setFilterStatus]  = useState("all")
+  const [filterCat,     setFilterCat]     = useState("all")
+  const [filterPrio,    setFilterPrio]    = useState("all")
+  const [sortField,     setSortField]     = useState("date")
+  const [sortDir,       setSortDir]       = useState("desc")
+  const [showFilter,    setShowFilter]    = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const token = localStorage.getItem("adminToken")
+    if (!token) { router.push("/admin/login"); return }
+    setAdmin(JSON.parse(localStorage.getItem("admin") || "null"))
+  }, [router])
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminToken")
+    localStorage.removeItem("admin")
+    router.push("/admin/login")
   }
 
-  if (submitted) return <SuccessPage user={user} form={form} selectedCategory={selectedCategory} />
+  // Filter + Search
+  const filtered = useMemo(() => {
+    let result = [...ALL_REPORTS]
+
+    if (search) {
+      const q = search.toLowerCase()
+      result = result.filter(r =>
+        r.title.toLowerCase().includes(q) ||
+        r.id.toLowerCase().includes(q) ||
+        r.pelapor.toLowerCase().includes(q)
+      )
+    }
+    if (filterStatus !== "all") result = result.filter(r => r.status === filterStatus)
+    if (filterCat !== "all")    result = result.filter(r => r.category === filterCat)
+    if (filterPrio !== "all")   result = result.filter(r => r.priority === filterPrio)
+
+    return result
+  }, [search, filterStatus, filterCat, filterPrio])
+
+  const activeFilters = [filterStatus, filterCat, filterPrio].filter(f => f !== "all").length
+
+  if (!mounted) return null
 
   return (
     <div className="min-h-screen bg-[#f6f8fc]">
-      <Navbar user={user} back="/user/lokasiFoto" title="Buat Pengajuan" />
+      <AdminNavbar admin={admin} onLogout={handleLogout} activeLink="/admin/pengaduan" />
 
-      <div className="max-w-4xl mx-auto px-6 py-10">
-        <StepBar current={4} steps={STEPS} />
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8 space-y-6">
 
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.25 }}
-          className="bg-white border border-[#e9edf5] rounded-[35px] p-8 mt-6"
-        >
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-[#f3f5f9] flex items-center justify-center text-slate-700">
-              <FaFileAlt />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-slate-800">Konfirmasi Pengaduan</h2>
-              <p className="text-slate-400 text-sm">Periksa kembali sebelum mengirim</p>
-            </div>
+        {/* Page Header */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.18em] uppercase text-slate-400">Manajemen</p>
+            <h2 className="text-3xl font-bold text-slate-900 mt-1">
+              Semua Pengaduan
+              <span className="ml-3 text-lg font-medium text-slate-400">({filtered.length})</span>
+            </h2>
           </div>
+          <button className="hidden sm:flex items-center gap-2 px-5 py-3 rounded-2xl border border-slate-200 bg-white text-slate-600 text-sm font-medium hover:bg-slate-50 transition">
+            <FaDownload className="text-xs" />
+            Export CSV
+          </button>
+        </motion.div>
 
-          {/* Review rows */}
-          <div className="space-y-3 mb-8">
-            <ReviewRow label="Kategori">
-              {selectedCategory && (
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs" style={{ backgroundColor: selectedCategory.color }}>
-                    {selectedCategory.icon}
-                  </span>
-                  <span>{selectedCategory.label}</span>
-                </div>
+        {/* Search & Filter Bar */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <div className="bg-white border border-slate-200 rounded-[28px] p-4 flex flex-col sm:flex-row gap-3">
+
+            {/* Search */}
+            <div className="relative flex-1">
+              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+              <input
+                type="text"
+                placeholder="Cari pengaduan, ID, atau nama pelapor..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-black transition"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <FaTimes className="text-xs" />
+                </button>
               )}
-            </ReviewRow>
+            </div>
 
-            <ReviewRow label="Judul">{form.title}</ReviewRow>
-
-            <ReviewRow label="Urgensi">
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${PRIORITY_STYLE[form.priority]}`}>
-                {PRIORITY_LABEL[form.priority]}
-              </span>
-            </ReviewRow>
-
-            <ReviewRow label="Deskripsi">
-              <p className="text-slate-600 text-sm leading-relaxed">{form.description}</p>
-            </ReviewRow>
-
-            <ReviewRow label="Alamat">
-              <p className="text-slate-600 text-sm">
-                {form.location}
-                {form.rt        && `, RT ${form.rt}`}
-                {form.rw        && `/RW ${form.rw}`}
-                {form.kelurahan && `, ${form.kelurahan}`}
-                {form.kecamatan && `, ${form.kecamatan}`}
-              </p>
-            </ReviewRow>
-
-            <ReviewRow label="Foto Bukti">
-              {!form.photos?.length ? (
-                <span className="text-slate-400 text-sm italic">Tidak ada foto</span>
-              ) : (
-                <div className="flex gap-2 flex-wrap">
-                  {form.photos.map((p, i) => (
-                    <img key={i} src={p.dataUrl} alt="" className="w-12 h-12 rounded-xl object-cover" />
-                  ))}
-                </div>
-              )}
-            </ReviewRow>
-          </div>
-
-          {/* Warning */}
-          <div className="flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl mb-6">
-            <FaExclamationTriangle className="text-amber-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-700 leading-relaxed">
-              Pastikan informasi yang Anda berikan adalah benar dan akurat. Pengaduan palsu dapat dikenakan sanksi sesuai peraturan yang berlaku.
-            </p>
-          </div>
-
-          {/* Agreement */}
-          <label className="flex items-start gap-3 cursor-pointer">
-            <div
-              className={`w-6 h-6 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-all mt-0.5 ${
-                agreement ? "bg-[#111111] border-[#111111]" : "border-[#d1d9e8]"
+            {/* Filter toggle */}
+            <button
+              onClick={() => setShowFilter(!showFilter)}
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl border text-sm font-medium transition ${
+                showFilter || activeFilters > 0
+                  ? "bg-black text-white border-black"
+                  : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
               }`}
-              onClick={() => setAgreement((v) => !v)}
             >
-              {agreement && <FaCheckCircle className="text-white text-xs" />}
-            </div>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Saya menyatakan bahwa informasi yang saya berikan dalam pengaduan ini adalah benar dan dapat dipertanggungjawabkan sesuai ketentuan yang berlaku.
-            </p>
-          </label>
+              <FaFilter className="text-xs" />
+              Filter
+              {activeFilters > 0 && (
+                <span className="w-5 h-5 rounded-full bg-white text-black text-xs flex items-center justify-center font-bold">
+                  {activeFilters}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Filter Dropdown */}
+          <AnimatePresence>
+            {showFilter && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                className="bg-white border border-slate-200 rounded-[24px] p-5 mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4"
+              >
+                {/* Status */}
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Status</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["all", "pending", "diproses", "selesai", "ditolak"].map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setFilterStatus(s)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                          filterStatus === s
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                        }`}
+                      >
+                        {s === "all" ? "Semua" : STATUS_MAP[s]?.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Kategori */}
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Kategori</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["all", ...Object.keys(CATEGORY_MAP)].map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setFilterCat(c)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                          filterCat === c
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                        }`}
+                      >
+                        {c === "all" ? "Semua" : CATEGORY_MAP[c]?.label.split(" ")[0]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Prioritas */}
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Prioritas</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["all", "rendah", "sedang", "tinggi"].map(p => (
+                      <button
+                        key={p}
+                        onClick={() => setFilterPrio(p)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                          filterPrio === p
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                        }`}
+                      >
+                        {p === "all" ? "Semua" : PRIORITY_MAP[p]?.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
-        <NavButtons onBack={() => router.push("/user/lokasiFoto")} onNext={handleKirim} canNext={agreement} isLast={true} />
-      </div>
-    </div>
-  )
-}
+        {/* Table */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <div className="bg-white border border-slate-200 rounded-[28px] overflow-hidden">
 
-function ReviewRow({ label, children }) {
-  return (
-    <div className="flex gap-4 p-4 bg-[#f8f9fb] rounded-2xl">
-      <span className="text-sm font-semibold text-slate-500 w-28 flex-shrink-0">{label}</span>
-      <div className="text-sm font-medium text-slate-800 flex-1">{children}</div>
-    </div>
-  )
-}
-
-function SuccessPage({ user, form, selectedCategory }) {
-  const ticketNumber = "ADU-" + Math.random().toString(36).toUpperCase().slice(2, 8)
-  return (
-    <div className="min-h-screen bg-[#f6f8fc] flex items-center justify-center px-6">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white border border-[#e9edf5] rounded-[40px] p-12 max-w-lg w-full text-center"
-      >
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: "spring" }}
-          className="w-24 h-24 rounded-full bg-[#f3f5f9] flex items-center justify-center mx-auto mb-6"
-        >
-          <FaCheckCircle className="text-[#111111] text-4xl" />
-        </motion.div>
-
-        <h1 className="text-3xl font-bold text-slate-800 mb-3">Pengaduan Terkirim!</h1>
-        <p className="text-slate-400 mb-6 leading-relaxed">
-          Pengaduan Anda telah kami terima dan sedang dalam proses verifikasi.
-          Kami akan segera menindaklanjuti laporan Anda.
-        </p>
-
-        <div className="bg-[#f8f9fb] rounded-2xl p-5 mb-6 text-left">
-          <p className="text-xs text-slate-400 mb-1 font-medium uppercase tracking-widest">Nomor Tiket</p>
-          <p className="text-2xl font-bold text-slate-800 font-mono">{ticketNumber}</p>
-          <p className="text-xs text-slate-400 mt-2">Simpan nomor ini untuk memantau status pengaduan Anda</p>
-        </div>
-
-        {selectedCategory && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-[#f8f9fb] mb-8 text-left">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm flex-shrink-0" style={{ backgroundColor: selectedCategory.color }}>
-              {selectedCategory.icon}
+            {/* Table Header */}
+            <div className="px-6 py-4 border-b border-slate-100 grid grid-cols-12 gap-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <div className="col-span-5">Pengaduan</div>
+              <div className="col-span-2 hidden md:block">Kategori</div>
+              <div className="col-span-2 hidden lg:block">Pelapor</div>
+              <div className="col-span-1 hidden lg:block">Prioritas</div>
+              <div className="col-span-2">Status</div>
             </div>
-            <div>
-              <p className="font-semibold text-slate-800 text-sm">{form.title}</p>
-              <p className="text-xs text-slate-400">{selectedCategory.label}</p>
+
+            {/* Rows */}
+            <div className="divide-y divide-slate-100">
+              {filtered.length === 0 ? (
+                <div className="px-6 py-16 text-center">
+                  <p className="text-slate-400 text-sm">Tidak ada pengaduan yang cocok dengan filter</p>
+                  <button
+                    onClick={() => { setSearch(""); setFilterStatus("all"); setFilterCat("all"); setFilterPrio("all") }}
+                    className="mt-3 text-xs text-black font-semibold underline underline-offset-2"
+                  >
+                    Reset filter
+                  </button>
+                </div>
+              ) : (
+                filtered.map((item, i) => {
+                  const cat      = CATEGORY_MAP[item.category]
+                  const status   = STATUS_MAP[item.status]
+                  const priority = PRIORITY_MAP[item.priority]
+
+                  return (
+                    <Link key={i} href={`/admin/pengaduan/${item.id}`}>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: i * 0.03 }}
+                        className="px-6 py-4 grid grid-cols-12 gap-4 items-center hover:bg-slate-50 transition cursor-pointer group"
+                      >
+                        {/* Title + ID */}
+                        <div className="col-span-5 min-w-0">
+                          <p className="font-semibold text-slate-800 text-sm truncate group-hover:text-black">
+                            {item.title}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                            <span className="font-mono">{item.id}</span>
+                            <span>•</span>
+                            <span>{item.date}</span>
+                          </div>
+                        </div>
+
+                        {/* Category */}
+                        <div className="col-span-2 hidden md:flex items-center gap-2">
+                          <div
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs flex-shrink-0"
+                            style={{ backgroundColor: cat.color }}
+                          >
+                            {cat.icon}
+                          </div>
+                          <span className="text-xs text-slate-600 truncate">{cat.label.split(" ")[0]}</span>
+                        </div>
+
+                        {/* Pelapor */}
+                        <div className="col-span-2 hidden lg:block">
+                          <p className="text-sm text-slate-600 truncate">{item.pelapor}</p>
+                        </div>
+
+                        {/* Priority */}
+                        <div className="col-span-1 hidden lg:block">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${priority.color}`}>
+                            {priority.label}
+                          </span>
+                        </div>
+
+                        {/* Status */}
+                        <div className="col-span-2 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${status.pill}`}>
+                              {status.label}
+                            </span>
+                          </div>
+                          <FaChevronRight className="text-slate-300 text-xs group-hover:text-slate-500 transition" />
+                        </div>
+                      </motion.div>
+                    </Link>
+                  )
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+              <p className="text-xs text-slate-400">
+                Menampilkan <span className="font-semibold text-slate-600">{filtered.length}</span> dari{" "}
+                <span className="font-semibold text-slate-600">{ALL_REPORTS.length}</span> pengaduan
+              </p>
             </div>
           </div>
-        )}
+        </motion.div>
 
-        <div className="flex gap-3">
-          <Link href="/user/beranda" className="flex-1">
-            <button className="w-full px-6 py-4 rounded-2xl border border-[#e9edf5] text-slate-700 font-medium hover:bg-[#f3f5f9] transition-all">
-              Ke Beranda
-            </button>
-          </Link>
-          <Link href="/user/beranda" className="flex-1">
-            <button className="w-full px-6 py-4 rounded-2xl bg-[#111111] text-white font-medium hover:bg-[#222222] transition-all">
-              Pantau Status
-            </button>
-          </Link>
-        </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

@@ -11,63 +11,94 @@ export default function RegisterPage() {
 
   const [loading, setLoading] = useState(false)
 
-  const [form, setForm] = useState({
-    username: "",
-    email: "",
-    password: ""
-  })
+const [form, setForm] = useState({
+  nama: "",
+  email: "",
+  password: ""
+})
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    })
-  }
+const handleChange = (e) => {
+  setForm({
+    ...form,
+    [e.target.name]: e.target.value
+  })
+}
 
   const handleSubmit = async (e) => {
+  e.preventDefault()
 
-    e.preventDefault()
+  setLoading(true)
 
-    setLoading(true)
+  try {
 
-    try {
-
-      const response = await fetch(
-        "http://localhost:5000/api/auth/register",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(form)
-        }
-      )
-
-      const data = await response.json()
-
-      if (response.ok) {
-
-        alert("Register berhasil")
-
-        router.push("/login")
-
-      } else {
-
-        alert(data.message)
-
+    // REGISTER
+    const registerResponse = await fetch(
+      "http://localhost:5000/api/auth/register",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(form)
       }
+    )
 
-    } catch (error) {
+    const registerData =
+      await registerResponse.json()
 
-      console.log(error)
-      alert("Server error")
-
-    } finally {
-
-      setLoading(false)
-
+    if (!registerResponse.ok) {
+      alert(registerData.message)
+      return
     }
+
+    // LOGIN OTOMATIS
+    const loginResponse = await fetch(
+      "http://localhost:5000/api/auth/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password
+        })
+      }
+    )
+
+    const loginData =
+      await loginResponse.json()
+
+    if (!loginResponse.ok) {
+      alert(loginData.message)
+      return
+    }
+
+    localStorage.setItem(
+      "token",
+      loginData.token
+    )
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify(loginData.user)
+    )
+
+    alert("Register berhasil")
+
+    router.push("/user/beranda")
+
+  } catch (error) {
+
+    console.log(error)
+    alert("Server error")
+
+  } finally {
+
+    setLoading(false)
+
   }
+}
 
   return (
     <div className="
@@ -274,38 +305,32 @@ export default function RegisterPage() {
 
               <div>
 
-                <label className="
-                  block
-                  text-sm
-                  font-medium
-                  text-gray-700
-                  mb-2
-                ">
-                  Username
-                </label>
+                <label>
+  Nama
+</label>
 
-                <input
-                  type="text"
-                  name="username"
-                  placeholder="Masukkan username"
-                  onChange={handleChange}
-                  required
-                  className="
-                    w-full
-                    bg-[#f8f8f8]
-                    border
-                    border-gray-200
-                    px-5
-                    py-4
-                    rounded-2xl
-                    outline-none
-                    transition-all
-                    focus:border-black
-                    focus:bg-white
-                    text-gray-800
-                    placeholder:text-gray-400
-                  "
-                />
+<input
+  type="text"
+  name="nama"
+  placeholder="Masukkan nama"
+  onChange={handleChange}
+  required
+  className="
+    w-full
+    bg-[#f8f8f8]
+    border
+    border-gray-200
+    px-5
+    py-4
+    rounded-2xl
+    outline-none
+    transition-all
+    focus:border-black
+    focus:bg-white
+    text-gray-800
+    placeholder:text-gray-400
+  "
+/>
 
               </div>
 
