@@ -42,11 +42,19 @@ export default function BuatPengaduanPage() {
     setMounted(true)
   }, [])
 
-  const handleLanjut = () => {
-    const existing = JSON.parse(localStorage.getItem("pengaduan") || "{}")
-    localStorage.setItem("pengaduan", JSON.stringify({ ...existing, category: selected }))
-    router.push("/user/detail")
-  }
+const handleLanjut = () => {
+  const existing = JSON.parse(localStorage.getItem("pengaduan") || "{}")
+
+  localStorage.setItem(
+    "pengaduan",
+    JSON.stringify({
+      ...existing,
+      category: selected
+    })
+  )
+
+  router.push("/user/detail")
+}
 
   // Hindari render berbeda antara server & client
   if (!mounted) return null
@@ -70,8 +78,12 @@ export default function BuatPengaduanPage() {
           <div className="grid grid-cols-2 gap-5">
             {CATEGORIES.map((cat) => (
               <button
+                type="button"
                 key={cat.id}
-                onClick={() => setSelected(cat.id)}
+                onClick={() => {
+                  console.log("Kategori dipilih:", cat.id)
+                  setSelected(cat.id)
+                }}
                 className={`flex items-center gap-5 p-6 rounded-[28px] border-2 transition-all text-left bg-white ${
                   selected === cat.id
                     ? "border-[#111111] shadow-sm"
