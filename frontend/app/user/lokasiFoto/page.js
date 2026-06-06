@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { FaMapMarkerAlt, FaCamera, FaUpload, FaTimes } from "react-icons/fa"
 import { Navbar, StepBar, NavButtons } from "../buatPengaduan/page"
+import { supabase } from "@/lib/supabase"
 
 const STEPS = [
   { id: 1, label: "Kategori" },
@@ -44,18 +45,38 @@ export default function LokasiFotoPage() {
 
   if (!mounted) return null
 
-  const handlePhotoUpload = (e) => {
-    const files = Array.from(e.target.files)
-    files.forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        setPhotos((prev) =>
-          [...prev, { name: file.name, dataUrl: ev.target.result }].slice(0, 5)
-        )
-      }
-      reader.readAsDataURL(file)
-    })
+  const handlePhotoUpload = async (e) => {
+  const files = Array.from(e.target.files)
+
+  for (const file of files) {
+    const fileName = `${Date.now()}-${file.name}`
+
+    console.log("Upload dimulai:", fileName)
+
+    const { error } = await supabase.storage
+      .from("pengaduan")
+      .upload(fileName, file)
+
+    console.log("Hasil upload:", error)
+
+    if (error) {
+      console.error("Upload gagal:", error)
+      continue
+    }
+
+    const { data } = supabase.storage
+      .from("pengaduan")
+      .getPublicUrl(fileName)
+
+    setPhotos((prev) => [
+      ...prev,
+      {
+        name: file.name,
+        dataUrl: data.publicUrl,
+      },
+    ])
   }
+}
 
   const removePhoto = (i) => setPhotos((prev) => prev.filter((_, idx) => idx !== i))
 
@@ -175,7 +196,11 @@ export default function LokasiFotoPage() {
               <div className="grid grid-cols-3 gap-3">
                 {photos.map((photo, i) => (
                   <div key={i} className="relative rounded-2xl overflow-hidden aspect-square bg-[#f3f5f9]">
-                    <img src={photo.dataUrl} alt={photo.name} className="w-full h-full object-cover" />
+                    <img
+                        src={photo.dataUrl}
+                        alt={photo.name}
+                        className="w-full h-full object-cover"
+                      />
                     <button
                       onClick={() => removePhoto(i)}
                       className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-all"
