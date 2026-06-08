@@ -292,7 +292,7 @@ export default function UserBerandaPage() {
               <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-black" />
             </button>
 
-            {/* ✅ Profile Section - Bisa Diklik ke Profil */}
+            {/* Profile Section - Bisa Diklik ke Profil */}
             <div className="flex items-center gap-3 bg-slate-100 px-3 py-2 rounded-2xl">
               <Link href="/user/profil">
                 <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-semibold cursor-pointer hover:scale-105 transition-transform">
@@ -307,10 +307,18 @@ export default function UserBerandaPage() {
                 </Link>
                 <p className="text-xs text-slate-400">Masyarakat</p>
               </div>
+              
+              {/* ✅ TOMBOL LOGOUT YANG BENAR - HAPUS COOKIE */}
               <button
                 onClick={() => {
+                  // Hapus localStorage
                   localStorage.removeItem("token");
                   localStorage.removeItem("user");
+                  
+                  // Hapus cookie dengan cara yang benar
+                  document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                  
+                  // Redirect ke login
                   router.push("/login");
                 }}
                 className="ml-3 px-4 py-2 rounded-xl bg-black text-white text-xs font-medium hover:bg-slate-800 transition"
