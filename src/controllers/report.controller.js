@@ -1,5 +1,11 @@
 // backend/src/controllers/report.controller.js
 import ReportModel from "../models/report.model.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const ReportController = {
   async create(req, res) {
@@ -7,27 +13,47 @@ const ReportController = {
       console.log("Request body:", req.body);
       console.log("Request files:", req.files);
       
-      // ✅ PERBAIKAN: Terima photos dari body (JSON) atau dari files (upload)
       let photos = [];
       
-      // Cek apakah photos dikirim sebagai JSON string dari frontend
+      // ✅ PROSES BASE64 DARI MOBILE
       if (req.body.photos) {
         try {
-          // Jika photos adalah string JSON, parse
+          let photoArray = req.body.photos;
           if (typeof req.body.photos === 'string') {
-            photos = JSON.parse(req.body.photos);
-          } 
-          // Jika photos sudah berupa array
-          else if (Array.isArray(req.body.photos)) {
-            photos = req.body.photos;
+            photoArray = JSON.parse(req.body.photos);
+          }
+          
+          for (let i = 0; i < photoArray.length; i++) {
+            const photo = photoArray[i];
+            
+            if (typeof photo === 'string' && photo.startsWith('data:image')) {
+              // Extract base64
+              const matches = photo.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
+              if (matches) {
+                let ext = matches[1];
+                if (ext === 'jpeg') ext = 'jpg';
+                const fileName = `${Date.now()}_${i}.${ext}`;
+                const uploadDir = path.join(__dirname, '../uploads');
+                
+                if (!fs.existsSync(uploadDir)) {
+                  fs.mkdirSync(uploadDir, { recursive: true });
+                }
+                
+                const filePath = path.join(uploadDir, fileName);
+                fs.writeFileSync(filePath, matches[2], 'base64');
+                photos.push(`/uploads/${fileName}`);
+                console.log(`✅ Foto saved: ${fileName}`);
+              }
+            } else if (typeof photo === 'string') {
+              photos.push(photo);
+            }
           }
         } catch (e) {
           console.log("Error parsing photos:", e);
-          photos = [];
         }
       }
       
-      // Jika ada file upload (dari form data dengan file)
+      // ✅ PROSES FILE UPLOAD DARI WEB
       if (req.files && req.files.length > 0) {
         const uploadedPhotos = req.files.map(file => `/uploads/${file.filename}`);
         photos = [...photos, ...uploadedPhotos];
@@ -43,11 +69,11 @@ const ReportController = {
         rw: req.body.rw || null,
         kelurahan: req.body.kelurahan || null,
         kecamatan: req.body.kecamatan || null,
-        photos: photos, // ✅ Sekarang bisa menerima URL dari Supabase atau file upload
+        photos: photos,
         user_id: req.user.id,
       };
       
-      console.log("Data to save:", data);
+      console.log("Data to save:", { ...data, photos: photos.length });
       
       const result = await ReportModel.create(data);
       
@@ -81,7 +107,6 @@ const ReportController = {
     }
   },
   
-  // GET MY REPORTS WITH FILTER (untuk 4 button)
   async getMyReportsWithFilter(req, res) {
     try {
       const { status, search, limit, page } = req.query;
@@ -93,7 +118,6 @@ const ReportController = {
         offset: ((page || 1) - 1) * (limit || 50),
       });
       
-      // Get counts for each tab
       const allReports = await ReportModel.findByUserId(req.user.id);
       const counts = {
         Semua: allReports.length,
@@ -198,7 +222,6 @@ const ReportController = {
     }
   },
   
-  // GET DASHBOARD STATS (untuk admin)
   async getDashboardStats(req, res) {
     try {
       const stats = await ReportModel.getStats();
@@ -222,11 +245,9 @@ const ReportController = {
     }
   },
   
-  // GET USER REPORT STATS (untuk dashboard user)
   async getUserReportStats(req, res) {
     try {
       const stats = await ReportModel.getUserStats(req.user.id);
-      
       return res.status(200).json({
         success: true,
         data: stats,
@@ -240,13 +261,11 @@ const ReportController = {
     }
   },
   
-  // ADD COMMENT TO REPORT
   async addComment(req, res) {
     try {
       const { id } = req.params;
       const { isi } = req.body;
       
-      // Check if report exists
       const report = await ReportModel.findById(id);
       if (!report) {
         return res.status(404).json({
@@ -271,7 +290,6 @@ const ReportController = {
     }
   },
   
-  // DELETE REPORT (admin only)
   async deleteReport(req, res) {
     try {
       const success = await ReportModel.delete(req.params.id);
