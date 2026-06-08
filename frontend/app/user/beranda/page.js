@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   FaPlus,
   FaClipboardList,
@@ -12,7 +12,10 @@ import {
   FaBell,
   FaChevronRight,
   FaFileAlt,
+  FaTimes,
 } from "react-icons/fa"
+
+// ─── Animation variants ───────────────────────────────────────────────────────
 
 const stagger = {
   animate: {
@@ -23,21 +26,18 @@ const stagger = {
 }
 
 const fadeUp = {
-  initial: {
-    opacity: 0,
-    y: 20,
-  },
+  initial: { opacity: 0, y: 20 },
   animate: {
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.4,
-    },
+    transition: { duration: 0.4 },
   },
 }
 
+// ─── Static data ──────────────────────────────────────────────────────────────
+
 const STATS = [
-  { value: "1.2K", label: "Total Pengaduan"  },
+  { value: "1.2K", label: "Total Pengaduan" },
   { value: "340",  label: "Selesai Ditangani" },
   { value: "48j",  label: "Rata-rata Respons" },
 ]
@@ -76,12 +76,167 @@ const STATUS_MAP = {
   Pending:  { pill: "bg-slate-100 text-slate-600",   dot: "bg-slate-400"  },
 }
 
+const ONBOARDING_STEPS = [
+  {
+    icon: <FaClipboardList />,
+    title: "Selamat datang di PengaduanKu 👋",
+    desc: "Portal ini memudahkan Anda melaporkan masalah fasilitas umum dan pelayanan masyarakat secara online, cepat, dan mudah.",
+    hint: "Panduan singkat ini akan membantu Anda memahami cara kerja portal dalam 4 langkah.",
+  },
+  {
+    icon: <FaPlus />,
+    title: "Buat pengajuan baru",
+    desc: 'Klik tombol "Buat Pengajuan" (tombol hitam besar di beranda) untuk melaporkan masalah. Isi judul, deskripsi, dan lampirkan foto jika diperlukan.',
+    hint: "Pengajuan Anda akan langsung masuk ke sistem dan ditinjau oleh petugas.",
+  },
+  {
+    icon: <FaClock />,
+    title: "Pantau status pengajuan",
+    desc: 'Gunakan menu "Sedang Diproses" untuk melihat laporan yang sedang ditangani, atau "Pengajuan Saya" untuk melihat seluruh riwayat laporan Anda.',
+    hint: "Status akan berubah otomatis: Pending → Diproses → Selesai.",
+  },
+  {
+    icon: <FaCheckCircle />,
+    title: "Siap digunakan!",
+    desc: "Anda sudah memahami cara dasar menggunakan PengaduanKu. Mulai buat pengajuan pertama Anda sekarang dan sampaikan aspirasi Anda.",
+    hint: "Panduan ini tidak akan muncul lagi. Selamat menggunakan portal pengaduan!",
+  },
+]
+
+// ─── Onboarding Overlay ───────────────────────────────────────────────────────
+
+function OnboardingOverlay({ onClose }) {
+  const [step, setStep] = useState(0)
+  const current = ONBOARDING_STEPS[step]
+  const isLast  = step === ONBOARDING_STEPS.length - 1
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="ob-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+      >
+        <motion.div
+          key="ob-card"
+          initial={{ opacity: 0, scale: 0.95, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.3 } }}
+          exit={{ opacity: 0, scale: 0.95, y: 16 }}
+          className="w-full max-w-[520px] rounded-[28px] overflow-hidden bg-white shadow-2xl"
+        >
+          {/* ── Dark header ── */}
+          <div className="bg-[#111111] px-8 pt-7 pb-6 relative overflow-hidden">
+            {/* Decorative circle */}
+            <div className="absolute top-[-60px] right-[-60px] w-[180px] h-[180px] rounded-full border border-white/5 pointer-events-none" />
+
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              <span className="text-xs text-white/60">Portal Pengaduan Masyarakat</span>
+            </div>
+
+            {/* Title */}
+            <h2
+              className="text-2xl font-bold text-white leading-tight"
+              style={{ letterSpacing: "-0.02em" }}
+            >
+              {current.title}
+            </h2>
+
+            {/* Progress dots */}
+            <div className="flex gap-1.5 mt-5">
+              {ONBOARDING_STEPS.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1 rounded-full flex-1 transition-all duration-300 ${
+                    i === step ? "bg-white" : i < step ? "bg-white/40" : "bg-white/15"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* ── Body ── */}
+          <div className="px-8 py-7">
+            {/* Icon */}
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600 text-xl mb-5">
+              {current.icon}
+            </div>
+
+            {/* Description */}
+            <p className="text-slate-600 text-sm leading-relaxed mb-5">
+              {current.desc}
+            </p>
+
+            {/* Hint box */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 flex items-start gap-3">
+              <span className="text-slate-400 text-base mt-0.5 flex-shrink-0">💡</span>
+              <span className="text-sm text-slate-500 leading-relaxed">{current.hint}</span>
+            </div>
+          </div>
+
+          {/* ── Footer ── */}
+          <div className="flex items-center justify-between px-8 pb-7">
+            <button
+              onClick={onClose}
+              className="text-sm text-slate-400 hover:text-slate-600 transition flex items-center gap-1.5"
+            >
+              <FaTimes className="text-xs" />
+              Lewati panduan
+            </button>
+
+            <div className="flex items-center gap-2">
+              {/* Step counter */}
+              <span className="text-xs text-slate-400">
+                {step + 1} / {ONBOARDING_STEPS.length}
+              </span>
+
+              {/* Back button (step > 0) */}
+              {step > 0 && (
+                <button
+                  onClick={() => setStep(step - 1)}
+                  className="px-4 py-2 rounded-2xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition"
+                >
+                  Kembali
+                </button>
+              )}
+
+              {/* Next / Finish */}
+              <button
+                onClick={() => (isLast ? onClose() : setStep(step + 1))}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-black text-white text-sm font-semibold hover:bg-slate-800 transition"
+              >
+                {isLast ? (
+                  <>
+                    Mulai sekarang
+                    <FaCheckCircle className="text-xs" />
+                  </>
+                ) : (
+                  <>
+                    Berikutnya
+                    <FaChevronRight className="text-xs" />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function UserBerandaPage() {
   const router = useRouter()
 
-  const [mounted, setMounted]     = useState(false)
-  const [user, setUser]           = useState(null)
-  const [pengajuan, setPengajuan] = useState([])
+  const [mounted, setMounted]               = useState(false)
+  const [user, setUser]                     = useState(null)
+  const [pengajuan, setPengajuan]           = useState([])
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -90,6 +245,12 @@ export default function UserBerandaPage() {
     if (!token) {
       router.push("/login")
       return
+    }
+
+    // Cek apakah user sudah pernah lihat onboarding
+    const seen = localStorage.getItem("onboarding_seen")
+    if (!seen) {
+      setShowOnboarding(true)
     }
 
     const getProfile = async () => {
@@ -133,13 +294,21 @@ export default function UserBerandaPage() {
     getPengajuan()
   }, [router])
 
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false)
+    localStorage.setItem("onboarding_seen", "true")
+  }
+
   if (!mounted) return null
 
   return (
     <div className="min-h-screen bg-[#f6f8fc]">
 
-      {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-slate-200">
+      {/* ── Onboarding Overlay ── */}
+      {showOnboarding && <OnboardingOverlay onClose={handleCloseOnboarding} />}
+
+      {/* ── NAVBAR ── */}
+      <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
 
           <div className="flex items-center gap-3">
@@ -182,11 +351,11 @@ export default function UserBerandaPage() {
         </div>
       </nav>
 
-      {/* CONTENT */}
+      {/* ── CONTENT ── */}
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8">
         <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-6">
 
-          {/* HERO */}
+          {/* ── HERO ── */}
           <motion.div variants={fadeUp}>
             <div className="bg-[#111111] rounded-[30px] px-8 py-8 relative overflow-hidden">
               <div className="absolute top-[-80px] right-[-80px] w-[220px] h-[220px] rounded-full border border-white/5" />
@@ -214,12 +383,22 @@ export default function UserBerandaPage() {
                     masyarakat secara online dengan cepat dan mudah.
                   </p>
 
-                  <Link href="/user/buatPengaduan">
-                    <button className="mt-5 flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all">
-                      <FaPlus className="text-sm" />
-                      Buat Pengajuan
+                  <div className="mt-5 flex items-center gap-3">
+                    <Link href="/user/buatPengaduan">
+                      <button className="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all">
+                        <FaPlus className="text-sm" />
+                        Buat Pengajuan
+                      </button>
+                    </Link>
+
+                    {/* Tombol lihat panduan lagi */}
+                    <button
+                      onClick={() => setShowOnboarding(true)}
+                      className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-white/20 text-white/70 text-sm hover:bg-white/10 transition"
+                    >
+                      Lihat Panduan
                     </button>
-                  </Link>
+                  </div>
                 </div>
 
                 <div className="hidden lg:flex flex-col gap-3 w-[200px]">
@@ -234,7 +413,7 @@ export default function UserBerandaPage() {
             </div>
           </motion.div>
 
-          {/* 4 BUTTON MENU */}
+          {/* ── 4 MENU CARDS ── */}
           <motion.div variants={fadeUp}>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {MENU.map((item, index) => (
@@ -247,7 +426,6 @@ export default function UserBerandaPage() {
                         : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
                     }`}
                   >
-                    {/* ICON */}
                     <div
                       className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg ${
                         item.primary
@@ -258,7 +436,6 @@ export default function UserBerandaPage() {
                       {item.icon}
                     </div>
 
-                    {/* TITLE */}
                     <h3
                       className={`mt-5 font-bold text-lg ${
                         item.primary ? "text-white" : "text-slate-800"
@@ -267,7 +444,6 @@ export default function UserBerandaPage() {
                       {item.title}
                     </h3>
 
-                    {/* DESC */}
                     <p
                       className={`text-sm mt-1 ${
                         item.primary ? "text-white/60" : "text-slate-400"
@@ -281,7 +457,7 @@ export default function UserBerandaPage() {
             </div>
           </motion.div>
 
-          {/* RIWAYAT PENGAJUAN */}
+          {/* ── RIWAYAT PENGAJUAN ── */}
           <motion.div variants={fadeUp}>
             <div className="bg-white rounded-[30px] border border-slate-200 p-6">
 
@@ -305,7 +481,7 @@ export default function UserBerandaPage() {
                 )}
               </div>
 
-              {/* KOSONG */}
+              {/* Kosong */}
               {pengajuan.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-14 gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
@@ -379,4 +555,4 @@ export default function UserBerandaPage() {
 
     </div>
   )
-}
+} 

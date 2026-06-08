@@ -1,3 +1,4 @@
+// backend/src/routes/report.routes.js
 import express from "express";
 import multer from "multer";
 import path from "path";
@@ -38,11 +39,32 @@ router.get(
   ReportController.getMyReports
 );
 
+// 🆕 GET MY REPORTS WITH FILTER (untuk 4 button)
+router.get(
+  "/my/filter",
+  verifyToken,
+  ReportController.getMyReportsWithFilter
+);
+
+// GET USER STATS
+router.get(
+  "/my/stats",
+  verifyToken,
+  ReportController.getUserReportStats
+);
+
 // GET DETAIL REPORT
 router.get(
   "/:id",
   verifyToken,
   ReportController.getById
+);
+
+// ADD COMMENT
+router.post(
+  "/:id/comments",
+  verifyToken,
+  ReportController.addComment
 );
 
 // CREATE REPORT
@@ -64,11 +86,25 @@ router.get(
   ReportController.getAllReports
 );
 
+// GET DASHBOARD STATS
+router.get(
+  "/admin/dashboard-stats",
+  verifyToken,
+  ReportController.getDashboardStats
+);
+
 // UPDATE STATUS
 router.patch(
   "/admin/:id/status",
   verifyToken,
   ReportController.updateStatus
+);
+
+// DELETE REPORT
+router.delete(
+  "/admin/:id",
+  verifyToken,
+  ReportController.deleteReport
 );
 
 export default router;

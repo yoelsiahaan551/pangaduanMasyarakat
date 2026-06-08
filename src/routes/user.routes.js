@@ -1,9 +1,13 @@
+// backend/src/routes/user.routes.js
 import { Router } from "express";
 import {
   getAll,
   getOne,
+  createUser,
   update,
-  remove
+  updateStatus,
+  remove,
+  getStats
 } from "../controllers/user.controller.js";
 
 import verifyToken from "../middleware/auth.middleware.js";
@@ -11,7 +15,11 @@ import authorizeRoles from "../middleware/role.middleware.js";
 
 const router = Router();
 
-// Admin bisa melihat semua user
+// ======================================
+// ADMIN ONLY ROUTES
+// ======================================
+
+// Get all users
 router.get(
   "/",
   verifyToken,
@@ -19,7 +27,15 @@ router.get(
   getAll
 );
 
-// Admin bisa melihat detail user
+// Get user stats (total, admin, user, aktif, nonaktif)
+router.get(
+  "/stats",
+  verifyToken,
+  authorizeRoles("admin"),
+  getStats
+);
+
+// Get single user detail
 router.get(
   "/:id",
   verifyToken,
@@ -27,7 +43,15 @@ router.get(
   getOne
 );
 
-// Admin bisa mengubah user
+// 🆕 Create new user (admin can create user or admin)
+router.post(
+  "/",
+  verifyToken,
+  authorizeRoles("admin"),
+  createUser
+);
+
+// Update user
 router.put(
   "/:id",
   verifyToken,
@@ -35,7 +59,15 @@ router.put(
   update
 );
 
-// Admin bisa menghapus user
+// 🆕 Update user status (aktif/nonaktif)
+router.patch(
+  "/:id/status",
+  verifyToken,
+  authorizeRoles("admin"),
+  updateStatus
+);
+
+// Delete user
 router.delete(
   "/:id",
   verifyToken,

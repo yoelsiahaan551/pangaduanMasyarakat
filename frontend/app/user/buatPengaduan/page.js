@@ -9,17 +9,17 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import {
-  FaArrowLeft, FaBell,
+  FaArrowLeft, FaBell, FaSpinner,
   FaRoad, FaLightbulb, FaLeaf, FaWater, FaTrash, FaBuilding,
 } from "react-icons/fa"
 
 const CATEGORIES = [
-  { id: "jalan",      label: "Jalan & Infrastruktur",  icon: <FaRoad />,      color: "#f59e0b" },
-  { id: "lampu",      label: "Penerangan Jalan",        icon: <FaLightbulb />, color: "#3b82f6" },
-  { id: "lingkungan", label: "Lingkungan & Taman",      icon: <FaLeaf />,      color: "#10b981" },
-  { id: "air",        label: "Drainase & Air",          icon: <FaWater />,     color: "#06b6d4" },
-  { id: "sampah",     label: "Kebersihan & Sampah",     icon: <FaTrash />,     color: "#8b5cf6" },
-  { id: "fasilitas",  label: "Fasilitas Umum",          icon: <FaBuilding />,  color: "#ef4444" },
+  { id: 1, kode: "jalan",      label: "Jalan & Infrastruktur",  icon: <FaRoad />,      color: "#f59e0b" },
+  { id: 2, kode: "lampu",      label: "Penerangan Jalan",        icon: <FaLightbulb />, color: "#3b82f6" },
+  { id: 3, kode: "lingkungan", label: "Lingkungan & Taman",      icon: <FaLeaf />,      color: "#10b981" },
+  { id: 4, kode: "air",        label: "Drainase & Air",          icon: <FaWater />,     color: "#06b6d4" },
+  { id: 5, kode: "sampah",     label: "Kebersihan & Sampah",     icon: <FaTrash />,     color: "#8b5cf6" },
+  { id: 6, kode: "fasilitas",  label: "Fasilitas Umum",          icon: <FaBuilding />,  color: "#ef4444" },
 ]
 
 const STEPS = [
@@ -31,32 +31,25 @@ const STEPS = [
 
 export default function BuatPengaduanPage() {
   const router = useRouter()
-  const [user, setUser]       = useState(null)
-  const [selected, setSelected] = useState("")
+  const [user, setUser] = useState(null)
+  const [selected, setSelected] = useState(null)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setUser(JSON.parse(localStorage.getItem("user") || "null"))
-    const saved = JSON.parse(localStorage.getItem("pengaduan") || "{}")
-    if (saved.category) setSelected(saved.category)
+    // Ambil user dari localStorage (atau dari context jika pakai auth)
+    const userData = JSON.parse(localStorage.getItem("user") || "null")
+    setUser(userData)
     setMounted(true)
   }, [])
 
-const handleLanjut = () => {
-  const existing = JSON.parse(localStorage.getItem("pengaduan") || "{}")
+  const handleLanjut = () => {
+    if (!selected) return
+    
+    // Simpan kategori yang dipilih ke localStorage untuk step berikutnya
+    localStorage.setItem("pengaduan_category", JSON.stringify(selected))
+    router.push("/user/detail")
+  }
 
-  localStorage.setItem(
-    "pengaduan",
-    JSON.stringify({
-      ...existing,
-      category: selected
-    })
-  )
-
-  router.push("/user/detail")
-}
-
-  // Hindari render berbeda antara server & client
   if (!mounted) return null
 
   return (
@@ -80,12 +73,9 @@ const handleLanjut = () => {
               <button
                 type="button"
                 key={cat.id}
-                onClick={() => {
-                  console.log("Kategori dipilih:", cat.id)
-                  setSelected(cat.id)
-                }}
+                onClick={() => setSelected(cat)}
                 className={`flex items-center gap-5 p-6 rounded-[28px] border-2 transition-all text-left bg-white ${
-                  selected === cat.id
+                  selected?.id === cat.id
                     ? "border-[#111111] shadow-sm"
                     : "border-[#eef2f7] hover:border-[#d7deea]"
                 }`}
@@ -100,7 +90,7 @@ const handleLanjut = () => {
                 </div>
                 <div>
                   <p className="text-[17px] font-bold text-slate-800">{cat.label}</p>
-                  {selected === cat.id && (
+                  {selected?.id === cat.id && (
                     <p className="text-sm text-slate-400 mt-1.5">Dipilih ✓</p>
                   )}
                 </div>
@@ -120,7 +110,9 @@ const handleLanjut = () => {
   )
 }
 
-// ── Shared Components (export untuk dipakai halaman lain) ──────────────────
+// ── Halaman Detail (Step 2) ─────────────────────────────────────────────────
+// File ini terpisah, tapi sementara saya gabung logikanya
+// Sebenarnya Anda punya file terpisah: /user/detail/page.js
 
 export function Navbar({ user, back, title }) {
   return (
@@ -142,10 +134,10 @@ export function Navbar({ user, back, title }) {
         </button>
         <div className="flex items-center gap-3 bg-[#f3f5f9] px-4 py-2 rounded-2xl">
           <div className="w-10 h-10 rounded-xl bg-[#111111] text-white flex items-center justify-center font-semibold">
-            {user?.username?.charAt(0).toUpperCase() || "U"}
+            {user?.username?.charAt(0).toUpperCase() || user?.nama?.charAt(0).toUpperCase() || "U"}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-800">{user?.username || "User"}</p>
+            <p className="text-sm font-semibold text-slate-800">{user?.username || user?.nama || "User"}</p>
             <p className="text-xs text-slate-400">Masyarakat</p>
           </div>
         </div>

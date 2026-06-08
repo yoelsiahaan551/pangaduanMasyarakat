@@ -2,6 +2,9 @@ import jwt from "jsonwebtoken";
 import db from "../config/database.js";
 
 const verifyToken = async (req, res, next) => {
+
+  console.log("HEADERS:", req.headers);
+
   const authHeader = req.headers.authorization;
   
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -32,7 +35,7 @@ const verifyToken = async (req, res, next) => {
     next();
   } catch (error) {
     return res.status(401).json({
-      success: false,
+        success: false,
       message: "Token tidak valid",
     });
   }

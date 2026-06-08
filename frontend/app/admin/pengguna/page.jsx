@@ -1,62 +1,75 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { FaSearch, FaUserPlus, FaChevronDown, FaEye, FaBan, FaCheckCircle } from "react-icons/fa"
-import { AdminSidebar } from "../dashboard/page"
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { FaSearch, FaUserPlus, FaEye, FaBan, FaCheckCircle, FaSpinner } from "react-icons/fa";
+import { AdminSidebar } from "../dashboard/page";
 
-// sisa kode sama seperti sebelumnya...
-// ─── Dummy Users ──────────────────────────────────────────────────────────────
-
-const ALL_USERS = [
-  { _id: "u1", nama: "Budi Santoso",    email: "budi@email.com",   telepon: "0812-3456-7890", role: "user",  status: "aktif",    joinAt: "2026-01-15", totalPengaduan: 5,  selesai: 3 },
-  { _id: "u2", nama: "Siti Rahayu",     email: "siti@email.com",   telepon: "0813-9876-5432", role: "user",  status: "aktif",    joinAt: "2026-02-20", totalPengaduan: 3,  selesai: 3 },
-  { _id: "u3", nama: "Ahmad Fauzi",     email: "ahmad@email.com",  telepon: "0811-2345-6789", role: "user",  status: "aktif",    joinAt: "2026-03-10", totalPengaduan: 2,  selesai: 0 },
-  { _id: "u4", nama: "Maya Putri",      email: "maya@email.com",   telepon: "0814-5678-9012", role: "user",  status: "aktif",    joinAt: "2026-02-01", totalPengaduan: 4,  selesai: 4 },
-  { _id: "u5", nama: "Rizal Hakim",     email: "rizal@email.com",  telepon: "0815-6789-0123", role: "user",  status: "aktif",    joinAt: "2026-04-05", totalPengaduan: 2,  selesai: 0 },
-  { _id: "u6", nama: "Deni Kurniawan",  email: "deni@email.com",   telepon: "0816-7890-1234", role: "user",  status: "aktif",    joinAt: "2026-05-12", totalPengaduan: 1,  selesai: 0 },
-  { _id: "u7", nama: "Rina Lestari",    email: "rina@email.com",   telepon: "0817-8901-2345", role: "user",  status: "nonaktif", joinAt: "2026-01-20", totalPengaduan: 7,  selesai: 5 },
-  { _id: "u8", nama: "Yudi Prasetyo",   email: "yudi@email.com",   telepon: "0818-9012-3456", role: "user",  status: "aktif",    joinAt: "2026-03-25", totalPengaduan: 3,  selesai: 1 },
-  { _id: "u9", nama: "Super Admin",     email: "admin@pengaduanku.id", telepon: "-",          role: "admin", status: "aktif",    joinAt: "2026-01-01", totalPengaduan: 0,  selesai: 0 },
-]
-
-const stagger = { animate: { transition: { staggerChildren: 0.06 } } }
-const fadeUp  = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0, transition: { duration: 0.3 } } }
+const stagger = { animate: { transition: { staggerChildren: 0.06 } } };
+const fadeUp = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
 
 const AVATAR_COLORS = [
-  "bg-blue-100 text-blue-700",
-  "bg-purple-100 text-purple-700",
-  "bg-green-100 text-green-700",
-  "bg-amber-100 text-amber-700",
-  "bg-pink-100 text-pink-700",
-  "bg-cyan-100 text-cyan-700",
-]
+  "bg-blue-100 text-blue-700", "bg-purple-100 text-purple-700", "bg-green-100 text-green-700",
+  "bg-amber-100 text-amber-700", "bg-pink-100 text-pink-700", "bg-cyan-100 text-cyan-700"
+];
 
 export default function AdminPenggunaPage() {
-  const [users, setUsers]   = useState(ALL_USERS)
-  const [search, setSearch] = useState("")
-  const [filter, setFilter] = useState("Semua")
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("Semua");
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/users", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (result.success) setUsers(result.data || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = users.filter((u) => {
-    const matchSearch = u.nama.toLowerCase().includes(search.toLowerCase()) ||
-                        u.email.toLowerCase().includes(search.toLowerCase())
-    const matchFilter = filter === "Semua" || (filter === "Aktif" && u.status === "aktif") ||
+    const matchSearch = u.nama?.toLowerCase().includes(search.toLowerCase()) ||
+                        u.email?.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === "Semua" || 
+                        (filter === "Aktif" && u.status === "aktif") ||
                         (filter === "Nonaktif" && u.status === "nonaktif") ||
-                        (filter === "Admin" && u.role === "admin")
-    return matchSearch && matchFilter
-  })
-
-  const toggleStatus = (id) => {
-    setUsers((prev) => prev.map((u) =>
-      u._id === id ? { ...u, status: u.status === "aktif" ? "nonaktif" : "aktif" } : u
-    ))
-  }
+                        (filter === "Admin" && u.role === "admin");
+    return matchSearch && matchFilter;
+  });
 
   const counts = {
     Semua: users.length,
     Aktif: users.filter(u => u.status === "aktif").length,
     Nonaktif: users.filter(u => u.status === "nonaktif").length,
-    Admin: users.filter(u => u.role === "admin").length,
+    Admin: users.filter(u => u.role === "admin").length
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("id-ID");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-[#f6f8fc]">
+        <AdminSidebar active="Manajemen User" />
+        <div className="flex-1 flex items-center justify-center">
+          <FaSpinner className="w-10 h-10 text-slate-400 animate-spin" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -64,27 +77,24 @@ export default function AdminPenggunaPage() {
       <AdminSidebar active="Manajemen User" />
 
       <div className="flex-1">
-
-        {/* TOPBAR */}
         <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200 px-8 h-16 flex items-center justify-between">
           <div>
             <h1 className="font-bold text-slate-900">Manajemen Pengguna</h1>
             <p className="text-xs text-slate-400">{filtered.length} pengguna ditemukan</p>
           </div>
           <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black text-white text-sm font-medium hover:bg-slate-800 transition">
-            <FaUserPlus className="text-xs" /> Tambah Admin
+            <FaUserPlus className="text-xs" /> Tambah User
           </button>
         </header>
 
         <div className="px-8 py-6 space-y-5">
-
           {/* STAT STRIP */}
           <div className="grid grid-cols-4 gap-4">
             {[
-              { label: "Total Pengguna", value: users.length,                                bg: "bg-white", accent: "text-slate-800" },
-              { label: "Aktif",          value: users.filter(u => u.status === "aktif").length, bg: "bg-green-50", accent: "text-green-700" },
-              { label: "Nonaktif",       value: users.filter(u => u.status === "nonaktif").length, bg: "bg-red-50", accent: "text-red-700" },
-              { label: "Admin",          value: users.filter(u => u.role === "admin").length,  bg: "bg-purple-50", accent: "text-purple-700" },
+              { label: "Total Pengguna", value: users.length, bg: "bg-white", accent: "text-slate-800" },
+              { label: "Aktif", value: users.filter(u => u.status === "aktif").length, bg: "bg-green-50", accent: "text-green-700" },
+              { label: "Nonaktif", value: users.filter(u => u.status === "nonaktif").length, bg: "bg-red-50", accent: "text-red-700" },
+              { label: "Admin", value: users.filter(u => u.role === "admin").length, bg: "bg-purple-50", accent: "text-purple-700" }
             ].map((s, i) => (
               <div key={i} className={`${s.bg} border border-slate-200 rounded-2xl p-4`}>
                 <p className="text-xs text-slate-400 mb-1">{s.label}</p>
@@ -118,7 +128,7 @@ export default function AdminPenggunaPage() {
                 placeholder="Cari nama atau email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400 transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-400"
               />
             </div>
           </div>
@@ -133,82 +143,55 @@ export default function AdminPenggunaPage() {
                     <th className="text-left text-xs font-semibold text-slate-400 px-5 py-3.5">Kontak</th>
                     <th className="text-left text-xs font-semibold text-slate-400 px-5 py-3.5">Role</th>
                     <th className="text-left text-xs font-semibold text-slate-400 px-5 py-3.5">Status</th>
-                    <th className="text-left text-xs font-semibold text-slate-400 px-5 py-3.5">Pengaduan</th>
                     <th className="text-left text-xs font-semibold text-slate-400 px-5 py-3.5">Bergabung</th>
                     <th className="text-left text-xs font-semibold text-slate-400 px-5 py-3.5">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {filtered.map((user, i) => (
-                    <tr key={user._id} className="hover:bg-slate-50 transition">
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}>
-                            {user.nama.charAt(0)}
-                          </div>
-                          <div>
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={6} className="text-center py-8 text-slate-400">Tidak ada data</td></tr>
+                  ) : (
+                    filtered.map((user, i) => (
+                      <tr key={user.id} className="hover:bg-slate-50 transition">
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}>
+                              {user.nama?.charAt(0) || "U"}
+                            </div>
                             <p className="font-semibold text-slate-800">{user.nama}</p>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <p className="text-slate-700 text-xs">{user.email}</p>
-                        <p className="text-slate-400 text-xs">{user.telepon}</p>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
-                          user.role === "admin"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-slate-100 text-slate-600"
-                        }`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${user.status === "aktif" ? "bg-green-500" : "bg-red-400"}`} />
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
-                            user.status === "aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                          }`}>
-                            {user.status}
+                        </td>
+                        <td className="px-5 py-4">
+                          <p className="text-slate-700 text-xs">{user.email}</p>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${user.role === "admin" ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-600"}`}>
+                            {user.role}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="text-center">
-                          <p className="font-bold text-slate-800">{user.totalPengaduan}</p>
-                          <p className="text-xs text-slate-400">{user.selesai} selesai</p>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 text-xs text-slate-500">{user.joinAt}</td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-2">
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${user.status === "aktif" ? "bg-green-500" : "bg-red-400"}`} />
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${user.status === "aktif" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                              {user.status || "aktif"}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-xs text-slate-500">{formatDate(user.created_at)}</td>
+                        <td className="px-5 py-4">
                           <button className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition text-xs">
                             <FaEye />
                           </button>
-                          {user.role !== "admin" && (
-                            <button
-                              onClick={() => toggleStatus(user._id)}
-                              className={`w-8 h-8 rounded-xl flex items-center justify-center transition text-xs ${
-                                user.status === "aktif"
-                                  ? "bg-red-50 text-red-500 hover:bg-red-100"
-                                  : "bg-green-50 text-green-600 hover:bg-green-100"
-                              }`}
-                            >
-                              {user.status === "aktif" ? <FaBan /> : <FaCheckCircle />}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </motion.div>
           </motion.div>
-
         </div>
       </div>
     </div>
-  )
+  );
 }
