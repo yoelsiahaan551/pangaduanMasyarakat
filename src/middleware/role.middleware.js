@@ -1,6 +1,6 @@
+// backend/src/middleware/role.middleware.js
 const roleMiddleware = (...roles) => {
   return (req, res, next) => {
-
     if (!req.user) {
       return res.status(401).json({
         message: "Unauthorized"

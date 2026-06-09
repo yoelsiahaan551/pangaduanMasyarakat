@@ -57,7 +57,6 @@ const ReportModel = {
     `;
     const params = [user_id];
     
-    // Filter by status
     if (filters.status && filters.status !== 'Semua') {
       if (filters.status === 'Diproses') {
         query += ` AND r.status IN ('pending', 'diproses')`;
@@ -68,7 +67,6 @@ const ReportModel = {
       }
     }
     
-    // Filter by search
     if (filters.search) {
       query += ` AND (r.judul LIKE ? OR r.report_number LIKE ? OR c.nama LIKE ?)`;
       const searchTerm = `%${filters.search}%`;
@@ -77,7 +75,6 @@ const ReportModel = {
     
     query += ` ORDER BY r.created_at DESC`;
     
-    // Add pagination
     if (filters.limit) {
       query += ` LIMIT ? OFFSET ?`;
       params.push(parseInt(filters.limit), parseInt(filters.offset) || 0);
@@ -168,6 +165,27 @@ const ReportModel = {
       `UPDATE reports SET status = ?, admin_notes = ? WHERE id = ?`,
       [status, admin_notes, id]
     );
+    return result.affectedRows > 0;
+  },
+  
+  // ✅ TAMBAHKAN METHOD UPDATE INI
+  async update(id, data) {
+    const { judul, deskripsi, lokasi, rt, rw, kelurahan, kecamatan } = data;
+    
+    const [result] = await db.query(
+      `UPDATE reports 
+       SET judul = ?, 
+           deskripsi = ?, 
+           lokasi = ?, 
+           rt = ?, 
+           rw = ?, 
+           kelurahan = ?, 
+           kecamatan = ?, 
+           updated_at = NOW()
+       WHERE id = ?`,
+      [judul, deskripsi, lokasi, rt || null, rw || null, kelurahan || null, kecamatan || null, id]
+    );
+    
     return result.affectedRows > 0;
   },
   

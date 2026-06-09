@@ -46,12 +46,19 @@ export default function DetailPage() {
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user") || "null")
     const savedData = JSON.parse(localStorage.getItem("pengaduan") || "{}")
+    const categoryData = JSON.parse(localStorage.getItem("pengaduan_category") || "null")
     
     setUser(userData)
     setSaved(savedData)
     if (savedData.title) setTitle(savedData.title)
     if (savedData.description) setDesc(savedData.description)
     if (savedData.priority) setPriority(savedData.priority)
+    
+    // ✅ Jika belum ada category, ambil dari pengaduan_category
+    if (!savedData.category && categoryData) {
+      setSaved({ category: categoryData.kode, category_name: categoryData.label })
+    }
+    
     setMounted(true)
   }, [])
 
@@ -61,13 +68,15 @@ export default function DetailPage() {
   const canNext = title.length >= 5 && desc.length >= 20
 
   const handleLanjut = () => {
+    // ✅ PERBAIKAN: Kirim category_name juga!
     localStorage.setItem("pengaduan", JSON.stringify({ 
       ...saved, 
       title, 
       description: desc, 
       priority,
       category_id: selectedCategory?.id,
-      category_kode: saved.category
+      category_kode: saved.category,
+      category_name: selectedCategory?.label  // ✅ INI YANG DITAMBAH
     }))
     router.push("/user/lokasiFoto")
   }

@@ -27,7 +27,6 @@ const ReportController = {
             const photo = photoArray[i];
             
             if (typeof photo === 'string' && photo.startsWith('data:image')) {
-              // Extract base64
               const matches = photo.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
               if (matches) {
                 let ext = matches[1];
@@ -222,6 +221,94 @@ const ReportController = {
     }
   },
   
+  // ✅ TAMBAHKAN METHOD UPDATE (User edit miliknya sendiri)
+  async update(req, res) {
+    try {
+      const report = await ReportModel.findById(req.params.id);
+      
+      if (!report) {
+        return res.status(404).json({
+          success: false,
+          message: "Laporan tidak ditemukan"
+        });
+      }
+      
+      // Cek apakah user pemilik laporan atau admin
+      if (report.user_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: "Anda tidak memiliki akses untuk mengedit laporan ini"
+        });
+      }
+      
+      const updated = await ReportModel.update(req.params.id, {
+        judul: req.body.judul,
+        deskripsi: req.body.deskripsi,
+        lokasi: req.body.lokasi,
+        rt: req.body.rt,
+        rw: req.body.rw,
+        kelurahan: req.body.kelurahan,
+        kecamatan: req.body.kecamatan,
+      });
+      
+      const updatedReport = await ReportModel.findById(req.params.id);
+      
+      return res.status(200).json({
+        success: true,
+        message: "Laporan berhasil diperbarui",
+        data: updatedReport
+      });
+    } catch (error) {
+      console.error("Update report error:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+  
+  // ✅ TAMBAHKAN METHOD DELETE (User hapus miliknya sendiri)
+  async delete(req, res) {
+    try {
+      const report = await ReportModel.findById(req.params.id);
+      
+      if (!report) {
+        return res.status(404).json({
+          success: false,
+          message: "Laporan tidak ditemukan"
+        });
+      }
+      
+      // Cek apakah user pemilik laporan atau admin
+      if (report.user_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: "Anda tidak memiliki akses untuk menghapus laporan ini"
+        });
+      }
+      
+      const success = await ReportModel.delete(req.params.id);
+      
+      if (!success) {
+        return res.status(404).json({
+          success: false,
+          message: "Laporan tidak ditemukan"
+        });
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: "Laporan berhasil dihapus"
+      });
+    } catch (error) {
+      console.error("Delete report error:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  },
+  
   async getDashboardStats(req, res) {
     try {
       const stats = await ReportModel.getStats();
@@ -290,6 +377,7 @@ const ReportController = {
     }
   },
   
+  // Method deleteReport untuk admin (sudah ada)
   async deleteReport(req, res) {
     try {
       const success = await ReportModel.delete(req.params.id);

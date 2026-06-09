@@ -22,36 +22,49 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
+      // REGISTER
+      const registerRes = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          nama: form.nama,
+          email: form.email,
+          password: form.password,
+          role: "user"
+        }),
       });
 
-      const data = await response.json();
+      const registerData = await registerRes.json();
 
-      if (response.ok) {
+      if (registerRes.ok) {
+        // REGISTER SUKSES, LANGSUNG LOGIN
         const loginRes = await fetch(`${API_URL}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: form.email, password: form.password }),
         });
+
         const loginData = await loginRes.json();
 
         if (loginRes.ok) {
           await AsyncStorage.setItem("token", loginData.token);
           await AsyncStorage.setItem("user", JSON.stringify(loginData.user));
-          Alert.alert("Berhasil", "Register berhasil!");
-          router.replace("/(tabs)/beranda");
+          
+          // ✅ PINDAH KE BERANDA
+          if (typeof window !== "undefined") {
+            window.location.href = "/beranda";
+          } else {
+            router.replace("/beranda");
+          }
         } else {
-          router.replace("/login");
+          Alert.alert("Info", "Registrasi berhasil, silakan login");
+          window.location.href = "/login";
         }
       } else {
-        Alert.alert("Registrasi Gagal", data.message);
+        Alert.alert("Registrasi Gagal", registerData.message || "Terjadi kesalahan");
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Server error. Pastikan backend running di port 5000");
+      Alert.alert("Error", "Backend tidak jalan");
     } finally {
       setLoading(false);
     }
@@ -60,8 +73,8 @@ export default function RegisterPage() {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Daftar akun baru</Text>
+        <Text style={styles.title}>Daftar Akun</Text>
+        <Text style={styles.subtitle}>Buat akun baru untuk melaporkan pengaduan</Text>
 
         <TextInput
           style={styles.input}
@@ -88,11 +101,11 @@ export default function RegisterPage() {
         />
 
         <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Daftar</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Daftar & Login</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push("/login")}>
-          <Text style={styles.registerText}>Sudah punya akun? Login</Text>
+        <TouchableOpacity onPress={() => window.location.href = "/login"}>
+          <Text style={styles.loginText}>Sudah punya akun? Login</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -101,11 +114,11 @@ export default function RegisterPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f7", justifyContent: "center", padding: 20 },
-  card: { backgroundColor: "#fff", borderRadius: 24, padding: 24, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, elevation: 4 },
+  card: { backgroundColor: "#fff", borderRadius: 24, padding: 24, elevation: 4 },
   title: { fontSize: 28, fontWeight: "bold", color: "#1e293b", marginBottom: 8 },
   subtitle: { fontSize: 14, color: "#94a3b8", marginBottom: 24 },
   input: { backgroundColor: "#f8fafc", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, borderWidth: 1, borderColor: "#e2e8f0", marginBottom: 16 },
   button: { backgroundColor: "#000", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 8 },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  registerText: { textAlign: "center", marginTop: 16, color: "#3b82f6", fontSize: 14 },
+  loginText: { textAlign: "center", marginTop: 16, color: "#3b82f6", fontSize: 14 },
 });

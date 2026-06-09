@@ -26,12 +26,23 @@ export default function ProfilPage() {
   const fetchProfile = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        // Token tidak ada, langsung ke login
+        router.replace("/login");
+        return;
+      }
+      
       const response = await fetch(`${API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const result = await response.json();
       if (result.success) {
         setUser(result.user);
+      } else {
+        // Token expired atau invalid
+        await AsyncStorage.removeItem("token");
+        await AsyncStorage.removeItem("user");
+        router.replace("/login");
       }
     } catch (error) {
       console.error(error);
@@ -40,19 +51,32 @@ export default function ProfilPage() {
     }
   };
 
-  const handleLogout = async () => {
-    Alert.alert("Logout", "Apakah Anda yakin ingin logout?", [
-      { text: "Batal", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          await AsyncStorage.removeItem("token");
-          await AsyncStorage.removeItem("user");
-          router.replace("/login");
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout", 
+      "Apakah Anda yakin ingin keluar?",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Hapus data
+              await AsyncStorage.removeItem("token");
+              await AsyncStorage.removeItem("user");
+              
+              // Redirect ke login
+              // Gunakan router.push bukan replace untuk memastikan
+              router.push("/login");
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert("Error", "Gagal logout, silakan coba lagi");
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const formatDate = (dateString: string) => {

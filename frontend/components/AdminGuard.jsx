@@ -9,14 +9,43 @@ export default function AdminGuard({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Ambil data dari localStorage
     const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-    if (!token || user.role !== "admin") {
-      router.push("/login");
-    } else {
-      setIsAuthorized(true);
+    const userStr = localStorage.getItem("user");
+    
+    console.log("========== ADMIN GUARD ==========");
+    console.log("Raw token:", token);
+    console.log("Raw user string:", userStr);
+    
+    let user = null;
+    try {
+      user = JSON.parse(userStr || "{}");
+      console.log("Parsed user:", user);
+      console.log("User role:", user.role);
+    } catch (e) {
+      console.error("Gagal parse user:", e);
+      user = {};
     }
+
+    // Validasi 1: Apakah token ada?
+    if (!token) {
+      console.log("❌ AdminGuard: Token TIDAK ADA, redirect ke login");
+      router.replace("/login");
+      return;
+    }
+
+    // Validasi 2: Apakah user ada dan role-nya admin?
+    if (!user || user.role !== "admin") {
+      console.log("❌ AdminGuard: User role BUKAN ADMIN (" + (user?.role || "undefined") + "), redirect ke login");
+      // Hapus data yang salah agar tidak menyebabkan loop
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      router.replace("/login");
+      return;
+    }
+
+    console.log("✅ AdminGuard: Verifikasi BERHASIL, akses diizinkan");
+    setIsAuthorized(true);
     setLoading(false);
   }, [router]);
 

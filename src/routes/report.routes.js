@@ -5,6 +5,7 @@ import path from "path";
 
 import ReportController from "../controllers/report.controller.js";
 import verifyToken from "../middleware/auth.middleware.js";
+import roleMiddleware from "../middleware/role.middleware.js"; // ✅ IMPORT
 
 const router = express.Router();
 
@@ -16,12 +17,8 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "src/uploads");
   },
-
   filename: (req, file, cb) => {
-    const uniqueName =
-      Date.now() +
-      path.extname(file.originalname);
-
+    const uniqueName = Date.now() + path.extname(file.originalname);
     cb(null, uniqueName);
   },
 });
@@ -32,79 +29,25 @@ const upload = multer({ storage });
 // USER ROUTES
 // ======================================
 
-// GET MY REPORTS
-router.get(
-  "/my",
-  verifyToken,
-  ReportController.getMyReports
-);
-
-// 🆕 GET MY REPORTS WITH FILTER (untuk 4 button)
-router.get(
-  "/my/filter",
-  verifyToken,
-  ReportController.getMyReportsWithFilter
-);
-
-// GET USER STATS
-router.get(
-  "/my/stats",
-  verifyToken,
-  ReportController.getUserReportStats
-);
-
-// GET DETAIL REPORT
-router.get(
-  "/:id",
-  verifyToken,
-  ReportController.getById
-);
-
-// ADD COMMENT
-router.post(
-  "/:id/comments",
-  verifyToken,
-  ReportController.addComment
-);
-
-// CREATE REPORT
-router.post(
-  "/",
-  verifyToken,
-  upload.array("photos", 5),
-  ReportController.create
-);
+router.get("/my", verifyToken, ReportController.getMyReports);
+router.get("/my/filter", verifyToken, ReportController.getMyReportsWithFilter);
+router.get("/my/stats", verifyToken, ReportController.getUserReportStats);
+router.get("/:id", verifyToken, ReportController.getById);
+router.put("/:id", verifyToken, ReportController.update);
+router.delete("/:id", verifyToken, ReportController.delete);
+router.post("/:id/comments", verifyToken, ReportController.addComment);
+router.post("/", verifyToken, upload.array("photos", 5), ReportController.create);
 
 // ======================================
 // ADMIN ROUTES
 // ======================================
 
-// GET ALL REPORTS
-router.get(
-  "/admin/all",
-  verifyToken,
-  ReportController.getAllReports
-);
+router.get("/admin/all", verifyToken, ReportController.getAllReports);
+router.get("/admin/dashboard-stats", verifyToken, ReportController.getDashboardStats);
+router.patch("/admin/:id/status", verifyToken, ReportController.updateStatus);
+router.delete("/admin/:id", verifyToken, ReportController.deleteReport);
 
-// GET DASHBOARD STATS
-router.get(
-  "/admin/dashboard-stats",
-  verifyToken,
-  ReportController.getDashboardStats
-);
-
-// UPDATE STATUS
-router.patch(
-  "/admin/:id/status",
-  verifyToken,
-  ReportController.updateStatus
-);
-
-// DELETE REPORT
-router.delete(
-  "/admin/:id",
-  verifyToken,
-  ReportController.deleteReport
-);
+// ✅ TAMBAHKAN INI UNTUK ADMIN EDIT
+router.put("/admin/:id", verifyToken, roleMiddleware("admin"), ReportController.update);
 
 export default router;
