@@ -15,6 +15,12 @@ import {
   FaTimes,
   FaSpinner,
   FaInfoCircle,
+  FaRoad,
+  FaLightbulb,
+  FaLeaf,
+  FaWater,
+  FaTrash,
+  FaBuilding,
 } from "react-icons/fa";
 
 // ─── Animation variants ───────────────────────────────────────────────────────
@@ -67,40 +73,66 @@ const MENU = [
 ];
 
 const STATUS_MAP = {
-  selesai: { pill: "bg-green-100 text-green-700", dot: "bg-green-500", label: "Selesai" },
-  diproses: { pill: "bg-yellow-100 text-yellow-700", dot: "bg-yellow-500", label: "Diproses" },
-  pending: { pill: "bg-slate-100 text-slate-600", dot: "bg-slate-400", label: "Pending" },
-  ditolak: { pill: "bg-red-100 text-red-700", dot: "bg-red-500", label: "Ditolak" },
+  selesai: { pill: "bg-green-100 text-black", dot: "bg-green-500", label: "Selesai" },
+  diproses: { pill: "bg-yellow-100 text-black", dot: "bg-yellow-500", label: "Diproses" },
+  pending: { pill: "bg-slate-100 text-black", dot: "bg-slate-400", label: "Pending" },
+  ditolak: { pill: "bg-red-100 text-black", dot: "bg-red-500", label: "Ditolak" },
 };
 
+// ✅ KATEGORI UNTUK PANDUAN - TEKS HITAM
+const CATEGORIES = [
+  { icon: <FaRoad />, label: "Jalan & Infrastruktur", color: "bg-amber-100 text-black" },
+  { icon: <FaLightbulb />, label: "Penerangan Jalan", color: "bg-blue-100 text-black" },
+  { icon: <FaLeaf />, label: "Lingkungan & Taman", color: "bg-green-100 text-black" },
+  { icon: <FaWater />, label: "Drainase & Air", color: "bg-cyan-100 text-black" },
+  { icon: <FaTrash />, label: "Kebersihan & Sampah", color: "bg-purple-100 text-black" },
+  { icon: <FaBuilding />, label: "Fasilitas Umum", color: "bg-red-100 text-black" },
+];
+
+// ✅ ONBOARDING STEPS - TEKS HITAM SEMUA
 const ONBOARDING_STEPS = [
   {
     icon: <FaClipboardList />,
-    title: "Selamat datang di PengaduanKu 👋",
-    desc: "Portal ini memudahkan Anda melaporkan masalah fasilitas umum dan pelayanan masyarakat secara online, cepat, dan mudah.",
-    hint: "Panduan singkat ini akan membantu Anda memahami cara kerja portal dalam 4 langkah.",
+    title: "Selamat datang! 👋",
+    desc: "Portal pengaduan masyarakat yang memudahkan Anda melaporkan masalah fasilitas umum.",
+    hint: "Klik 'Lanjut' untuk mempelajari cara penggunaan.",
   },
   {
     icon: <FaPlus />,
-    title: "Buat pengajuan baru",
-    desc: 'Klik tombol "Buat Pengajuan" (tombol hitam besar di beranda) untuk melaporkan masalah. Isi judul, deskripsi, dan lampirkan foto jika diperlukan.',
-    hint: "Pengajuan Anda akan langsung masuk ke sistem dan ditinjau oleh petugas.",
+    title: "Buat Pengajuan",
+    desc: 'Klik tombol "Buat Pengajuan" untuk melaporkan masalah. Isi judul, deskripsi, kategori, dan lampirkan foto.',
+    hint: "Pastikan data yang diisi lengkap agar cepat diproses.",
   },
   {
     icon: <FaClock />,
-    title: "Pantau status pengajuan",
-    desc: 'Gunakan menu "Sedang Diproses" untuk melihat laporan yang sedang ditangani, atau "Pengajuan Saya" untuk melihat seluruh riwayat laporan Anda.',
-    hint: "Status akan berubah otomatis: Pending → Diproses → Selesai.",
+    title: "Pantau Status",
+    desc: 'Lihat perkembangan pengajuan di menu "Sedang Diproses" atau "Pengajuan Saya".',
+    hint: "Status berubah: Pending → Diproses → Selesai.",
   },
   {
     icon: <FaCheckCircle />,
-    title: "Siap digunakan!",
-    desc: "Anda sudah memahami cara dasar menggunakan PengaduanKu. Mulai buat pengajuan pertama Anda sekarang dan sampaikan aspirasi Anda.",
-    hint: "Panduan ini tidak akan muncul lagi. Selamat menggunakan portal pengaduan!",
+    title: "Siap Digunakan! 🎉",
+    desc: "Anda sudah siap menggunakan PengaduanKu. Mulai buat pengajuan sekarang!",
+    hint: "Panduan ini tidak akan muncul lagi.",
   },
 ];
 
-// ─── Onboarding Overlay ───────────────────────────────────────────────────────
+// ─── KATEGORI CARD UNTUK PANDUAN ─────────────────────────────────────────────
+
+function CategoryGrid() {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {CATEGORIES.map((cat, idx) => (
+        <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg ${cat.color}`}>
+          <span className="text-sm">{cat.icon}</span>
+          <span className="text-xs font-medium truncate">{cat.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── ONBOARDING OVERLAY (PERSEGI) ────────────────────────────────────────────
 
 function OnboardingOverlay({ onClose }) {
   const [step, setStep] = useState(0);
@@ -114,58 +146,66 @@ function OnboardingOverlay({ onClose }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       >
         <motion.div
           key="ob-card"
           initial={{ opacity: 0, scale: 0.95, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.3 } }}
           exit={{ opacity: 0, scale: 0.95, y: 16 }}
-          className="w-full max-w-[520px] rounded-[28px] overflow-hidden bg-white shadow-2xl"
+          className="w-full max-w-md rounded-2xl overflow-hidden bg-white shadow-2xl"
         >
-          {/* Dark header */}
-          <div className="bg-[#111111] px-8 pt-7 pb-6 relative overflow-hidden">
-            <div className="absolute top-[-60px] right-[-60px] w-[180px] h-[180px] rounded-full border border-white/5 pointer-events-none" />
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              <span className="text-xs text-white/60">Portal Pengaduan Masyarakat</span>
+          {/* Header */}
+          <div className="bg-black px-6 pt-6 pb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
+                <span className="text-white text-sm">{current.icon}</span>
+              </div>
+              <span className="text-xs text-white/50">Langkah {step + 1}/{ONBOARDING_STEPS.length}</span>
             </div>
-            <h2 className="text-2xl font-bold text-white leading-tight">{current.title}</h2>
-            <div className="flex gap-1.5 mt-5">
-              {ONBOARDING_STEPS.map((_, i) => (
-                <div key={i} className={`h-1 rounded-full flex-1 transition-all duration-300 ${
-                  i === step ? "bg-white" : i < step ? "bg-white/40" : "bg-white/15"
-                }`} />
-              ))}
-            </div>
+            <h2 className="text-xl font-bold text-white leading-tight">{current.title}</h2>
           </div>
 
           {/* Body */}
-          <div className="px-8 py-7">
-            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600 text-xl mb-5">
-              {current.icon}
-            </div>
-            <p className="text-slate-600 text-sm leading-relaxed mb-5">{current.desc}</p>
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 flex items-start gap-3">
-              <span className="text-slate-400 text-base mt-0.5 flex-shrink-0">💡</span>
-              <span className="text-sm text-slate-500 leading-relaxed">{current.hint}</span>
+          <div className="px-6 py-5">
+            <p className="text-black text-sm leading-relaxed mb-4">{current.desc}</p>
+            
+            {step === 1 && (
+              <div className="mb-4 p-3 bg-slate-50 rounded-lg">
+                <p className="text-xs font-semibold text-black mb-2">📂 Kategori yang tersedia:</p>
+                <CategoryGrid />
+              </div>
+            )}
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 flex items-start gap-2">
+              <span className="text-amber-600 text-sm">💡</span>
+              <span className="text-xs text-black">{current.hint}</span>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-8 pb-7">
-            <button onClick={onClose} className="text-sm text-slate-400 hover:text-slate-600 transition flex items-center gap-1.5">
-              <FaTimes className="text-xs" /> Lewati panduan
+          <div className="flex items-center justify-between px-6 pb-6 gap-3">
+            <button 
+              onClick={onClose} 
+              className="text-xs text-black/60 hover:text-black transition px-3 py-2"
+            >
+              Lewati
             </button>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">{step + 1} / {ONBOARDING_STEPS.length}</span>
               {step > 0 && (
-                <button onClick={() => setStep(step - 1)} className="px-4 py-2 rounded-2xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">
+                <button 
+                  onClick={() => setStep(step - 1)} 
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-black text-sm font-medium hover:bg-slate-50 transition"
+                >
                   Kembali
                 </button>
               )}
-              <button onClick={() => (isLast ? onClose() : setStep(step + 1))} className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-black text-white text-sm font-semibold hover:bg-slate-800 transition">
-                {isLast ? <>Mulai sekarang <FaCheckCircle className="text-xs" /></> : <>Berikutnya <FaChevronRight className="text-xs" /></>}
+              <button 
+                onClick={() => (isLast ? onClose() : setStep(step + 1))} 
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-black text-white text-sm font-semibold hover:bg-slate-800 transition"
+              >
+                {isLast ? "Selesai" : "Lanjut"}
+                {!isLast && <FaChevronRight className="text-xs" />}
               </button>
             </div>
           </div>
@@ -175,7 +215,7 @@ function OnboardingOverlay({ onClose }) {
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function UserBerandaPage() {
   const router = useRouter();
@@ -208,7 +248,6 @@ export default function UserBerandaPage() {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      // Get profile
       const profileRes = await fetch("http://localhost:5000/api/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -220,7 +259,6 @@ export default function UserBerandaPage() {
         throw new Error("Session expired");
       }
 
-      // Get reports
       const reportsRes = await fetch("http://localhost:5000/api/reports/my/filter?status=Semua", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -261,7 +299,7 @@ export default function UserBerandaPage() {
   if (!mounted || loading) {
     return (
       <div className="min-h-screen bg-[#f6f8fc] flex items-center justify-center">
-        <FaSpinner className="w-10 h-10 text-slate-400 animate-spin" />
+        <FaSpinner className="w-10 h-10 text-black animate-spin" />
       </div>
     );
   }
@@ -269,7 +307,6 @@ export default function UserBerandaPage() {
   return (
     <div className="min-h-screen bg-[#f6f8fc]">
 
-      {/* Onboarding Overlay */}
       {showOnboarding && <OnboardingOverlay onClose={handleCloseOnboarding} />}
 
       {/* ── NAVBAR ── */}
@@ -281,18 +318,17 @@ export default function UserBerandaPage() {
               <span className="text-white font-bold text-sm">P</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">PengaduanKu</h1>
-              <p className="text-sm text-slate-400">Portal Pengaduan Masyarakat</p>
+              <h1 className="text-xl font-bold text-black">PengaduanKu</h1>
+              <p className="text-sm text-black/50">Portal Pengaduan Masyarakat</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition">
+            <button className="relative w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center text-black hover:bg-slate-200 transition">
               <FaBell />
               <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-black" />
             </button>
 
-            {/* Profile Section - Bisa Diklik ke Profil */}
             <div className="flex items-center gap-3 bg-slate-100 px-3 py-2 rounded-2xl">
               <Link href="/user/profil">
                 <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-semibold cursor-pointer hover:scale-105 transition-transform">
@@ -301,24 +337,18 @@ export default function UserBerandaPage() {
               </Link>
               <div className="leading-tight">
                 <Link href="/user/profil">
-                  <p className="text-sm font-semibold text-slate-800 hover:underline cursor-pointer">
+                  <p className="text-sm font-semibold text-black hover:underline cursor-pointer">
                     {user?.nama || "User"}
                   </p>
                 </Link>
-                <p className="text-xs text-slate-400">Masyarakat</p>
+                <p className="text-xs text-black/50">Masyarakat</p>
               </div>
               
-              {/* ✅ TOMBOL LOGOUT YANG BENAR - HAPUS COOKIE */}
               <button
                 onClick={() => {
-                  // Hapus localStorage
                   localStorage.removeItem("token");
                   localStorage.removeItem("user");
-                  
-                  // Hapus cookie dengan cara yang benar
                   document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                  
-                  // Redirect ke login
                   router.push("/login");
                 }}
                 className="ml-3 px-4 py-2 rounded-xl bg-black text-white text-xs font-medium hover:bg-slate-800 transition"
@@ -337,30 +367,27 @@ export default function UserBerandaPage() {
 
           {/* ── HERO ── */}
           <motion.div variants={fadeUp}>
-            <div className="bg-[#111111] rounded-[30px] px-8 py-8 relative overflow-hidden">
+            <div className="bg-black rounded-3xl px-8 py-8 relative overflow-hidden">
               <div className="absolute top-[-80px] right-[-80px] w-[220px] h-[220px] rounded-full border border-white/5" />
 
-              <div className="relative z-10 flex items-center justify-between gap-8">
+              <div className="relative z-10 flex items-center justify-between gap-8 flex-wrap">
                 <div className="max-w-2xl">
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 mb-5">
                     <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
                     <span className="text-sm text-white/70">Selamat Datang, {user?.nama || "User"}!</span>
                   </div>
 
-                  <h1 className="text-4xl md:text-5xl font-bold text-white leading-[1.05]" style={{ letterSpacing: "-0.03em" }}>
+                  <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
                     Sampaikan
                     <br />
                     Pengajuan Anda
-                    <br />
-                    Dengan Mudah
                   </h1>
 
-                  <p className="text-white/50 text-sm leading-relaxed max-w-xl mt-4">
-                    Laporkan permasalahan fasilitas umum dan pelayanan
-                    masyarakat secara online dengan cepat dan mudah.
+                  <p className="text-white/50 text-sm max-w-xl mt-4">
+                    Laporkan permasalahan fasilitas umum secara online dengan cepat dan mudah.
                   </p>
 
-                  <div className="mt-5 flex items-center gap-3">
+                  <div className="mt-5 flex items-center gap-3 flex-wrap">
                     <Link href="/user/buatPengaduan">
                       <button className="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all">
                         <FaPlus className="text-sm" />
@@ -374,16 +401,16 @@ export default function UserBerandaPage() {
                   </div>
                 </div>
 
-                <div className="hidden lg:flex flex-col gap-3 w-[200px]">
-                  <div className="bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-4">
+                <div className="flex gap-3">
+                  <div className="bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-4 min-w-[100px] text-center">
                     <h2 className="text-2xl font-bold text-white">{stats.total}</h2>
-                    <p className="text-xs text-white/40 mt-1">Total Pengaduan</p>
+                    <p className="text-xs text-white/40 mt-1">Total</p>
                   </div>
-                  <div className="bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-4">
+                  <div className="bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-4 min-w-[100px] text-center">
                     <h2 className="text-2xl font-bold text-white">{stats.diproses}</h2>
-                    <p className="text-xs text-white/40 mt-1">Sedang Diproses</p>
+                    <p className="text-xs text-white/40 mt-1">Diproses</p>
                   </div>
-                  <div className="bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-4">
+                  <div className="bg-white/[0.04] border border-white/10 rounded-2xl px-5 py-4 min-w-[100px] text-center">
                     <h2 className="text-2xl font-bold text-white">{stats.selesai}</h2>
                     <p className="text-xs text-white/40 mt-1">Selesai</p>
                   </div>
@@ -394,26 +421,26 @@ export default function UserBerandaPage() {
 
           {/* ── 4 MENU CARDS ── */}
           <motion.div variants={fadeUp}>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {MENU.map((item, index) => (
                 <Link key={index} href={item.href}>
                   <motion.div
                     whileHover={{ y: -4 }}
-                    className={`rounded-[28px] border p-5 transition-all duration-200 cursor-pointer ${
+                    className={`rounded-2xl border p-5 transition-all duration-200 cursor-pointer ${
                       item.primary
                         ? "bg-black border-black hover:bg-slate-800 hover:shadow-lg"
                         : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
                     }`}
                   >
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg ${
-                      item.primary ? "bg-white/10 text-white" : "bg-slate-100 text-slate-700"
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg ${
+                      item.primary ? "bg-white/10 text-white" : "bg-slate-100 text-black"
                     }`}>
                       {item.icon}
                     </div>
-                    <h3 className={`mt-5 font-bold text-lg ${item.primary ? "text-white" : "text-slate-800"}`}>
+                    <h3 className={`mt-4 font-bold text-base ${item.primary ? "text-white" : "text-black"}`}>
                       {item.title}
                     </h3>
-                    <p className={`text-sm mt-1 ${item.primary ? "text-white/60" : "text-slate-400"}`}>
+                    <p className={`text-xs mt-1 ${item.primary ? "text-white/60" : "text-black/50"}`}>
                       {item.desc}
                     </p>
                   </motion.div>
@@ -424,15 +451,15 @@ export default function UserBerandaPage() {
 
           {/* ── RIWAYAT PENGAJUAN ── */}
           <motion.div variants={fadeUp}>
-            <div className="bg-white rounded-[30px] border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
                 <div>
-                  <p className="text-xs font-semibold tracking-[0.2em] uppercase text-slate-400">Riwayat Pengajuan</p>
-                  <h2 className="text-2xl font-bold text-slate-900 mt-2">Pengajuan Saya</h2>
+                  <p className="text-xs font-semibold tracking-wider uppercase text-black/50">Riwayat</p>
+                  <h2 className="text-xl font-bold text-black mt-1">Pengajuan Saya</h2>
                 </div>
                 {pengajuan.length > 0 && (
                   <Link href="/user/beranda/pengajuanSaya">
-                    <button className="text-sm font-medium text-slate-500 hover:text-black flex items-center gap-2 transition">
+                    <button className="text-sm font-medium text-black/60 hover:text-black flex items-center gap-2 transition">
                       Lihat Semua <FaChevronRight className="text-xs" />
                     </button>
                   </Link>
@@ -440,44 +467,44 @@ export default function UserBerandaPage() {
               </div>
 
               {pengajuan.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-14 gap-4">
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
-                    <FaFileAlt className="text-slate-400 text-2xl" />
+                    <FaFileAlt className="text-black/40 text-2xl" />
                   </div>
                   <div className="text-center">
-                    <p className="font-semibold text-slate-700">Belum ada pengajuan</p>
-                    <p className="text-sm text-slate-400 mt-1">Pengajuan yang Anda buat akan muncul di sini</p>
+                    <p className="font-semibold text-black">Belum ada pengajuan</p>
+                    <p className="text-sm text-black/50 mt-1">Pengajuan Anda akan muncul di sini</p>
                   </div>
                   <Link href="/user/buatPengaduan">
-                    <button className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-black text-white text-sm font-semibold hover:bg-slate-800 transition">
-                      <FaPlus className="text-xs" /> Buat Pengajuan Pertama
+                    <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black text-white text-sm font-semibold hover:bg-slate-800 transition">
+                      <FaPlus className="text-xs" /> Buat Pengajuan
                     </button>
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {pengajuan.map((item, index) => {
                     const status = STATUS_MAP[item.status] || STATUS_MAP.pending;
                     return (
                       <Link key={item.id || index} href={`/user/detail/${item.id}`}>
-                        <motion.div whileHover={{ x: 4 }} className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-2xl p-4 hover:bg-white hover:border-slate-300 transition cursor-pointer">
-                          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 flex-shrink-0">
+                        <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl p-4 hover:bg-white hover:border-slate-300 transition cursor-pointer">
+                          <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-black flex-shrink-0">
                             <FaFileAlt />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-slate-800 truncate">{item.judul}</h3>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
-                              <span className="font-mono">{item.report_number || item.id?.toString().slice(-8)}</span>
+                            <h3 className="font-semibold text-black text-sm truncate">{item.judul}</h3>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-black/50">
+                              <span className="font-mono">{item.report_number}</span>
                               <span>•</span>
                               <span>{formatDate(item.created_at)}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <div className={`w-2 h-2 rounded-full ${status.dot}`} />
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${status.pill}`}>{status.label}</span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${status.pill}`}>{status.label}</span>
                           </div>
-                          <FaChevronRight className="text-slate-400 text-sm flex-shrink-0" />
-                        </motion.div>
+                          <FaChevronRight className="text-black/40 text-xs flex-shrink-0" />
+                        </div>
                       </Link>
                     );
                   })}
@@ -488,10 +515,10 @@ export default function UserBerandaPage() {
 
           {/* Info Bantuan */}
           <motion.div variants={fadeUp}>
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center gap-3">
-              <FaInfoCircle className="text-blue-500 text-lg flex-shrink-0" />
-              <p className="text-sm text-blue-700">
-                💡 Butuh bantuan? Hubungi admin di <strong>admin@ukk.id</strong> atau melalui fitur komentar di setiap pengaduan.
+            <div className="bg-blue-100 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+              <FaInfoCircle className="text-blue-700 text-base flex-shrink-0" />
+              <p className="text-sm text-black">
+                💡 Butuh bantuan? Hubungi <strong>admin@ukk.id</strong>
               </p>
             </div>
           </motion.div>
