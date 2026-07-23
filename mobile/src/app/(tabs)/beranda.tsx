@@ -55,21 +55,6 @@ export default function BerandaPage() {
     }
   };
 
-  const handleLogout = async () => {
-    Alert.alert("Logout", "Apakah Anda yakin ingin logout?", [
-      { text: "Batal", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          await AsyncStorage.removeItem("token");
-          await AsyncStorage.removeItem("user");
-          router.replace("/login");
-        },
-      },
-    ]);
-  };
-
   const MenuCard = ({ icon, title, desc, onPress, primary = false }: any) => (
     <TouchableOpacity
       style={[styles.menuCard, primary && styles.menuCardPrimary]}
@@ -140,11 +125,6 @@ export default function BerandaPage() {
           onPress={() => router.push("/riwayat?tab=selesai")}
         />
       </View>
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={20} color="#fff" />
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -159,7 +139,7 @@ const styles = StyleSheet.create({
   statCard: { backgroundColor: "#ffffff", borderRadius: 16, paddingVertical: 12, paddingHorizontal: 20, alignItems: "center", flex: 1, marginHorizontal: 5, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, elevation: 2 },
   statValue: { fontSize: 22, fontWeight: "bold", color: "#000000" },
   statLabel: { fontSize: 11, color: "#94a3b8", marginTop: 4 },
-  menuContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", paddingHorizontal: 20, marginTop: 24 },
+  menuContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", paddingHorizontal: 20, marginTop: 24, marginBottom: 24 },
   menuCard: { backgroundColor: "#ffffff", borderRadius: 20, padding: 16, width: "48%", marginBottom: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, elevation: 2 },
   menuCardPrimary: { backgroundColor: "#000000" },
   menuIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: "#f1f5f9", alignItems: "center", justifyContent: "center", marginBottom: 12 },
@@ -168,6 +148,4 @@ const styles = StyleSheet.create({
   menuTitlePrimary: { color: "#ffffff" },
   menuDesc: { fontSize: 12, color: "#94a3b8" },
   menuDescPrimary: { color: "#ffffff80" },
-  logoutButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#ef4444", marginHorizontal: 20, marginVertical: 24, paddingVertical: 12, borderRadius: 12, gap: 8 },
-  logoutText: { color: "#ffffff", fontSize: 14, fontWeight: "500" },
 });
